@@ -19,72 +19,87 @@ export default async function handler(req, res) {
     "Content-Type": "application/json"
   };
 
-  // CRIAR NOVO LANÇAMENTO EM MOVIMENTOS FINANCEIROS (POST)
-  if (req.method === "POST") {
-    const DATABASE_ID = databases.movimentos;
-    if (!DATABASE_ID) {
-      return res.status(400).json({ error: "NOTION_DATABASE_ID não configurado." });
-    }
+  const TARGET_ID = databases[tab];
+  if (!TARGET_ID) {
+    return res.status(400).json({ error: `ID da aba '${tab}' não configurado na Vercel.` });
+  }
 
+  // 1. LER ESTRUTURA DAS COLUNAS PARA MONTAR O FORMULÁRIO DINÂMICO (?schema=1)
+  if (req.method === "GET" && req.query.schema === "1") {
     try {
-      const { titulo, valor, data, categoria } = req.body;
-
-      const schemaRes = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}`, {
+      const schemaRes = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}`, {
         method: "GET",
         headers
       });
       const schemaData = await schemaRes.json();
 
       if (!schemaRes.ok) {
-        return res.status(schemaRes.status).json({ error: schemaData.message || "Erro ao ler estrutura da tabela." });
+        return res.status(schemaRes.status).json({ error: "Esta aba é um painel de indicadores e não aceita novos registos diretos." });
       }
 
-      const properties = {};
-      let titlePropName = null;
-      let numberPropName = null;
-      let datePropName = null;
-      let selectPropName = null;
-      let selectPropType = null;
-
-      for (const [colName, colDef] of Object.entries(schemaData.properties)) {
-        if (colDef.type === "title" && !titlePropName) {
-          titlePropName = colName;
-        } else if (colDef.type === "number" && !numberPropName) {
-          numberPropName = colName;
-        } else if (colDef.type === "date" && !datePropName) {
-          datePropName = colName;
-        } else if ((colDef.type === "select" || colDef.type === "status") && !selectPropName) {
-          selectPropName = colName;
-          selectPropType = colDef.type;
+      const campos = [];
+      for (const [nome, def] of Object.entries(schemaData.properties)) {
+        if (["title", "number", "date", "select", "status", "rich_text", "checkbox", "multi_select"].includes(def.type)) {
+          let opcoes = [];
+          if (def.type === "select" && def.select?.options) opcoes = def.select.options.map(o => o.name);
+          if (def.type === "status" && def.status?.options) opcoes = def.status.options.map(o => o.name);
+          if (def.type === "multi_select" && def.multi_select?.options) opcoes = def.multi_select.options.map(o => o.name);
+          campos.push({ nome, tipo: def.type, opcoes });
         }
       }
 
-      if (titlePropName) {
-        properties[titlePropName] = {
-          title: [{ text: { content: titulo || "Novo movimento" } }]
-        };
+      // Garante que o campo de título aparece sempre em primeiro lugar
+      campos.sort((a, b) => (a.tipo === "title" ? -1 : b.tipo === "title" ? 1 : 0));
+      return res.status(200).json({ campos });
+    } catch (e) {
+      return res.status(500).json({ error: "Erro ao obter campos da tabela." });
+    }
+  }
+
+  // 2. GRAVAR NOVO REGISTO NA ABA ATIVA (POST)
+  if (req.method === "POST") {
+    try {
+      const { valores } = req.body;
+      const schemaRes = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}`, {
+        method: "GET",
+        headers
+      });
+      const schemaData = await schemaRes.json();
+
+      if (!schemaRes.ok) {
+        return res.status(schemaRes.status).json({ error: schemaData.message || "Erro ao validar tabela." });
       }
-      if (numberPropName && valor !== "" && valor !== undefined && !isNaN(parseFloat(valor))) {
-        properties[numberPropName] = {
-          number: parseFloat(valor)
-        };
-      }
-      if (datePropName && data) {
-        properties[datePropName] = {
-          date: { start: data }
-        };
-      }
-      if (selectPropName && categoria && categoria.trim() !== "") {
-        properties[selectPropName] = {
-          [selectPropType]: { name: categoria.trim() }
-        };
+
+      const properties = {};
+      for (const [colName, colDef] of Object.entries(schemaData.properties)) {
+        const val = valores[colName];
+        if (val === undefined || val === "" || val === null) continue;
+
+        if (colDef.type === "title") {
+          properties[colName] = { title: [{ text: { content: String(val) } }] };
+        } else if (colDef.type === "number" && !isNaN(parseFloat(val))) {
+          properties[colName] = { number: parseFloat(val) };
+        } else if (colDef.type === "date") {
+          properties[colName] = { date: { start: val } };
+        } else if (colDef.type === "select") {
+          properties[colName] = { select: { name: String(val).trim() } };
+        } else if (colDef.type === "status") {
+          properties[colName] = { status: { name: String(val).trim() } };
+        } else if (colDef.type === "multi_select") {
+          const lista = Array.isArray(val) ? val : String(val).split(",").map(s => s.trim()).filter(Boolean);
+          properties[colName] = { multi_select: lista.map(name => ({ name })) };
+        } else if (colDef.type === "rich_text") {
+          properties[colName] = { rich_text: [{ text: { content: String(val) } }] };
+        } else if (colDef.type === "checkbox") {
+          properties[colName] = { checkbox: Boolean(val) };
+        }
       }
 
       const createRes = await fetch("https://api.notion.com/v1/pages", {
         method: "POST",
         headers,
         body: JSON.stringify({
-          parent: { database_id: DATABASE_ID },
+          parent: { database_id: TARGET_ID },
           properties
         })
       });
@@ -96,18 +111,68 @@ export default async function handler(req, res) {
 
       return res.status(200).json({ ok: true, id: createData.id });
     } catch (error) {
-      return res.status(500).json({ error: "Falha interna ao criar lançamento no Notion." });
+      return res.status(500).json({ error: "Falha interna ao criar registo." });
     }
   }
 
-  // LISTAR DADOS DAS ABAS (GET)
-  const TARGET_ID = databases[tab];
-  if (!TARGET_ID) {
-    return res.status(400).json({ error: `ID da aba '${tab}' ainda não configurado nas variáveis da Vercel.` });
+  // 3. EXTRAIR INDICADORES NUMÉRICOS PARA A ABA SAÚDE FINANCEIRA
+  if (tab === "saude") {
+    try {
+      const kpis = [];
+
+      // Verifica primeiro se TARGET_ID é uma base de dados direta
+      const dbTest = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}/query`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({})
+      });
+
+      if (dbTest.ok) {
+        const dbData = await dbTest.json();
+        extrairNumerosDePaginas(dbData.results, kpis);
+      } else {
+        // Caso seja uma página de painel, procura blocos numéricos e bases de dados embutidas dentro dela
+        const blocksRes = await fetch(`https://api.notion.com/v1/blocks/${TARGET_ID}/children`, {
+          method: "GET",
+          headers
+        });
+        const blocksData = await blocksRes.json();
+
+        for (const block of (blocksData.results || [])) {
+          if (block.type === "child_database") {
+            const subDbRes = await fetch(`https://api.notion.com/v1/databases/${block.id}/query`, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({})
+            });
+            if (subDbRes.ok) {
+              const subDbData = await subDbRes.json();
+              extrairNumerosDePaginas(subDbData.results, kpis, block.child_database?.title);
+            }
+          } else {
+            // Extrai números/valores monetários ou percentagens de callouts/títulos (ignorando textos longos)
+            const conteudo = block[block.type];
+            const texto = conteudo?.rich_text ? conteudo.rich_text.map(t => t.plain_text).join("") : "";
+            if (texto && /\d/.test(texto) && texto.length < 90) {
+              const partes = texto.split(":");
+              if (partes.length >= 2) {
+                kpis.push({ indicador: partes[0].trim(), valor: partes.slice(1).join(":").trim(), grupo: "Indicador" });
+              } else {
+                kpis.push({ indicador: "Métrica", valor: texto.trim(), grupo: "Indicador" });
+              }
+            }
+          }
+        }
+      }
+
+      return res.status(200).json({ mode: "kpis", kpis });
+    } catch (e) {
+      return res.status(500).json({ error: "Erro ao ler métricas de Saúde Financeira." });
+    }
   }
 
+  // 4. LISTAR REGISTOS NORMAIS DAS TABELAS (MOVIMENTOS, FOLHA, ORÇAMENTOS)
   try {
-    // Tenta ler como Base de Dados primeiro
     const response = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}/query`, {
       method: "POST",
       headers,
@@ -115,32 +180,6 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-
-    // Se o ID for de uma Página (e não uma tabela direta), lê os blocos internos da página
-    if (!response.ok && data.code === "object_not_found" || (data.message && data.message.includes("is a page, not a database"))) {
-      const blocksRes = await fetch(`https://api.notion.com/v1/blocks/${TARGET_ID}/children`, {
-        method: "GET",
-        headers
-      });
-      const blocksData = await blocksRes.json();
-
-      if (!blocksRes.ok) {
-        return res.status(blocksRes.status).json({ error: blocksData.message || "Erro ao ler página do Notion." });
-      }
-
-      const blocosFormatados = blocksData.results
-        .map(block => {
-          const conteudo = block[block.type];
-          const texto = conteudo && conteudo.rich_text
-            ? conteudo.rich_text.map(t => t.plain_text).join("")
-            : "";
-          return texto ? { id: block.id, titulo: texto, status: block.type.replace("_", " "), colunas: [] } : null;
-        })
-        .filter(Boolean);
-
-      return res.status(200).json({ items: blocosFormatados });
-    }
-
     if (!response.ok) {
       return res.status(response.status).json({ error: data.message || "Erro na API do Notion" });
     }
@@ -179,8 +218,35 @@ export default async function handler(req, res) {
       return { id: page.id, titulo, status, colunas };
     });
 
-    res.status(200).json({ items: itensFormatados });
+    res.status(200).json({ mode: "list", items: itensFormatados });
   } catch (error) {
     res.status(500).json({ error: "Falha ao conectar com o Notion." });
+  }
+}
+
+function extrairNumerosDePaginas(pages, kpis, nomeTabela = "") {
+  for (const page of pages) {
+    let nomeLinha = nomeTabela || "Indicador";
+    for (const [, prop] of Object.entries(page.properties)) {
+      if (prop.type === "title" && prop.title.length > 0) {
+        nomeLinha = prop.title.map(t => t.plain_text).join("");
+      }
+    }
+
+    for (const [colName, prop] of Object.entries(page.properties)) {
+      if (prop.type === "number" && prop.number !== null) {
+        kpis.push({
+          indicador: `${nomeLinha} · ${colName}`,
+          valor: prop.number.toLocaleString("pt-PT", { minimumFractionDigits: 2 }),
+          grupo: colName
+        });
+      } else if (prop.type === "formula" && prop.formula && prop.formula.number !== null && prop.formula.number !== undefined) {
+        kpis.push({
+          indicador: `${nomeLinha} · ${colName}`,
+          valor: prop.formula.number.toLocaleString("pt-PT", { minimumFractionDigits: 2 }),
+          grupo: colName
+        });
+      }
+    }
   }
 }
