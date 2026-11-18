@@ -1,7 +1,22 @@
 export default async function handler(req, res) {
   const NOTION_TOKEN = process.env.NOTION_TOKEN;
-  const tab = req.query.tab || "movimentos";
+  const APP_PASSWORD = process.env.APP_PASSWORD;
 
+  // 1. VERIFICAÇÃO DE AUTENTICAÇÃO
+  if (APP_PASSWORD) {
+    const senhaRecebida = req.headers["x-app-password"] || req.body?.password;
+    if (senhaRecebida !== APP_PASSWORD) {
+      return res.status(401).json({ error: "Senha incorreta ou sessão expirada." });
+    }
+    // Se for apenas um pedido de validação de login (?auth=1)
+    if (req.query.auth === "1") {
+      return res.status(200).json({ ok: true });
+    }
+  } else if (req.query.auth === "1") {
+    return res.status(200).json({ ok: true });
+  }
+
+  const tab = req.query.tab || "movimentos";
   const databases = {
     movimentos: process.env.NOTION_DATABASE_ID,
     folha: process.env.NOTION_FOLHA_ID,
@@ -24,7 +39,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: `ID da aba '${tab}' não configurado na Vercel.` });
   }
 
-  // 1. LER ESTRUTURA DAS COLUNAS PARA MONTAR O FORMULÁRIO DINÂMICO (?schema=1)
+  // 2. LER ESTRUTURA DAS COLUNAS PARA MONTAR O FORMULÁRIO DINÂMICO (?schema=1)
   if (req.method === "GET" && req.query.schema === "1") {
     try {
       const schemaRes = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}`, {
@@ -48,7 +63,6 @@ export default async function handler(req, res) {
         }
       }
 
-      // Garante que o campo de título aparece sempre em primeiro lugar
       campos.sort((a, b) => (a.tipo === "title" ? -1 : b.tipo === "title" ? 1 : 0));
       return res.status(200).json({ campos });
     } catch (e) {
@@ -56,7 +70,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // 2. GRAVAR NOVO REGISTO NA ABA ATIVA (POST)
+  // 3. GRAVAR NOVO REGISTO NA ABA ATIVA (POST)
   if (req.method === "POST") {
     try {
       const { valores } = req.body;
@@ -115,12 +129,10 @@ export default async function handler(req, res) {
     }
   }
 
-  // 3. EXTRAIR INDICADORES NUMÉRICOS PARA A ABA SAÚDE FINANCEIRA
+  // 4. EXTRAIR INDICADORES NUMÉRICOS PARA A ABA SAÚDE FINANCEIRA
   if (tab === "saude") {
     try {
       const kpis = [];
-
-      // Verifica primeiro se TARGET_ID é uma base de dados direta
       const dbTest = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}/query`, {
         method: "POST",
         headers,
@@ -131,7 +143,6 @@ export default async function handler(req, res) {
         const dbData = await dbTest.json();
         extrairNumerosDePaginas(dbData.results, kpis);
       } else {
-        // Caso seja uma página de painel, procura blocos numéricos e bases de dados embutidas dentro dela
         const blocksRes = await fetch(`https://api.notion.com/v1/blocks/${TARGET_ID}/children`, {
           method: "GET",
           headers
@@ -150,7 +161,6 @@ export default async function handler(req, res) {
               extrairNumerosDePaginas(subDbData.results, kpis, block.child_database?.title);
             }
           } else {
-            // Extrai números/valores monetários ou percentagens de callouts/títulos (ignorando textos longos)
             const conteudo = block[block.type];
             const texto = conteudo?.rich_text ? conteudo.rich_text.map(t => t.plain_text).join("") : "";
             if (texto && /\d/.test(texto) && texto.length < 90) {
@@ -171,7 +181,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // 4. LISTAR REGISTOS NORMAIS DAS TABELAS (MOVIMENTOS, FOLHA, ORÇAMENTOS)
+  // 5. LISTAR REGISTOS NORMAIS DAS TABELAS
   try {
     const response = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}/query`, {
       method: "POST",
