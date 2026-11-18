@@ -5,7 +5,8 @@ export default async function handler(req, res) {
   const databases = {
     movimentos: process.env.NOTION_DATABASE_ID,
     folha: process.env.NOTION_FOLHA_ID,
-    orcamentos: process.env.NOTION_ORCAMENTOS_ID
+    orcamentos: process.env.NOTION_ORCAMENTOS_ID,
+    saude: process.env.NOTION_SAUDE_ID
   };
 
   if (!NOTION_TOKEN) {
@@ -28,7 +29,6 @@ export default async function handler(req, res) {
     try {
       const { titulo, valor, data, categoria } = req.body;
 
-      // 1. Ler estrutura da tabela para identificar os nomes exatos das colunas no Notion
       const schemaRes = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}`, {
         method: "GET",
         headers
@@ -80,7 +80,6 @@ export default async function handler(req, res) {
         };
       }
 
-      // 2. Inserir a nova linha no Notion
       const createRes = await fetch("https://api.notion.com/v1/pages", {
         method: "POST",
         headers,
@@ -102,19 +101,45 @@ export default async function handler(req, res) {
   }
 
   // LISTAR DADOS DAS ABAS (GET)
-  const DATABASE_ID = databases[tab];
-  if (!DATABASE_ID) {
-    return res.status(400).json({ error: `ID da tabela '${tab}' ainda não configurado nas variáveis da Vercel.` });
+  const TARGET_ID = databases[tab];
+  if (!TARGET_ID) {
+    return res.status(400).json({ error: `ID da aba '${tab}' ainda não configurado nas variáveis da Vercel.` });
   }
 
   try {
-    const response = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, {
+    // Tenta ler como Base de Dados primeiro
+    const response = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}/query`, {
       method: "POST",
       headers,
       body: JSON.stringify({})
     });
 
     const data = await response.json();
+
+    // Se o ID for de uma Página (e não uma tabela direta), lê os blocos internos da página
+    if (!response.ok && data.code === "object_not_found" || (data.message && data.message.includes("is a page, not a database"))) {
+      const blocksRes = await fetch(`https://api.notion.com/v1/blocks/${TARGET_ID}/children`, {
+        method: "GET",
+        headers
+      });
+      const blocksData = await blocksRes.json();
+
+      if (!blocksRes.ok) {
+        return res.status(blocksRes.status).json({ error: blocksData.message || "Erro ao ler página do Notion." });
+      }
+
+      const blocosFormatados = blocksData.results
+        .map(block => {
+          const conteudo = block[block.type];
+          const texto = conteudo && conteudo.rich_text
+            ? conteudo.rich_text.map(t => t.plain_text).join("")
+            : "";
+          return texto ? { id: block.id, titulo: texto, status: block.type.replace("_", " "), colunas: [] } : null;
+        })
+        .filter(Boolean);
+
+      return res.status(200).json({ items: blocosFormatados });
+    }
 
     if (!response.ok) {
       return res.status(response.status).json({ error: data.message || "Erro na API do Notion" });
