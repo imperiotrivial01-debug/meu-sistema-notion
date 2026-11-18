@@ -54,6 +54,7 @@
       <button class="tab active" id="tab-movimentos" onclick="mudarAba('movimentos', this)">Movimentos</button>
       <button class="tab" id="tab-folha" onclick="mudarAba('folha', this)">Folha Salarial</button>
       <button class="tab" id="tab-orcamentos" onclick="mudarAba('orcamentos', this)">Orçamentos</button>
+      <button class="tab" id="tab-saude" onclick="mudarAba('saude', this)">Saúde Financeira</button>
     </div>
 
     <div id="lista">Carregando...</div>
@@ -191,7 +192,7 @@
     }
 
     carregarDados();
+    setInterval(carregarDados, 30000);
   </script>
 </body>
 </html>
-setInterval(carregarDados, 30000);
