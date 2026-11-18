@@ -6,10 +6,13 @@
   <title>Gestão Financeira</title>
   <link rel="manifest" href="/manifest.json">
   <style>
+    * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f7; margin: 0; padding: 16px; color: #1d1d1f; }
     .container { max-width: 720px; margin: 0 auto; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 8px; }
     h1 { font-size: 22px; margin: 0; }
+    .header-actions { display: flex; gap: 8px; }
+    .btn-new { background: #34c759; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; }
     .btn-sync { background: #0071e3; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; }
     .tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
     .tab { background: #e5e5ea; color: #1d1d1f; border: none; padding: 10px 14px; border-radius: 10px; font-weight: 600; cursor: pointer; white-space: nowrap; }
@@ -21,23 +24,69 @@
     .prop { font-size: 13px; }
     .prop-label { color: #86868b; font-size: 11px; display: block; text-transform: uppercase; }
     .prop-val { font-weight: 500; color: #1d1d1f; }
-    .erro { color: #d93025; background: #fce8e6; padding: 12px; border-radius: 8px; }
+    .erro { color: #d93025; background: #fce8e6; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+
+    /* Modal do Formulário */
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+    .modal-bg.open { display: flex; }
+    .modal { background: white; width: 100%; max-width: 420px; border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .modal h2 { margin: 0 0 16px 0; font-size: 18px; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: #515154; margin-bottom: 4px; }
+    .field input { width: 100%; padding: 10px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 15px; font-family: inherit; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .btn-cancel { background: #e5e5ea; color: #1d1d1f; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-save { background: #0071e3; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <h1>Gestão Financeira</h1>
-      <button class="btn-sync" onclick="carregarDados()">Atualizar</button>
+      <div class="header-actions">
+        <button class="btn-new" onclick="abrirFormulario()">+ Novo</button>
+        <button class="btn-sync" onclick="carregarDados()">Atualizar</button>
+      </div>
     </header>
 
     <div class="tabs">
-      <button class="tab active" onclick="mudarAba('movimentos', this)">Movimentos</button>
-      <button class="tab" onclick="mudarAba('folha', this)">Folha Salarial</button>
-      <button class="tab" onclick="mudarAba('orcamentos', this)">Orçamentos</button>
+      <button class="tab active" id="tab-movimentos" onclick="mudarAba('movimentos', this)">Movimentos</button>
+      <button class="tab" id="tab-folha" onclick="mudarAba('folha', this)">Folha Salarial</button>
+      <button class="tab" id="tab-orcamentos" onclick="mudarAba('orcamentos', this)">Orçamentos</button>
     </div>
 
     <div id="lista">Carregando...</div>
+  </div>
+
+  <!-- Modal Novo Movimento -->
+  <div class="modal-bg" id="modalNovo">
+    <div class="modal">
+      <h2>Novo Movimento Financeiro</h2>
+      <div id="erroForm" class="erro" style="display:none;"></div>
+      <form id="formMovimento" onsubmit="salvarMovimento(event)">
+        <div class="field">
+          <label>Descrição / Título *</label>
+          <input type="text" id="campoTitulo" placeholder="Ex: Pagamento fornecedor" required>
+        </div>
+        <div class="field">
+          <label>Valor (€)</label>
+          <input type="number" step="0.01" id="campoValor" placeholder="Ex: 150.00">
+        </div>
+        <div class="field">
+          <label>Data</label>
+          <input type="date" id="campoData">
+        </div>
+        <div class="field">
+          <label>Estado / Categoria</label>
+          <input type="text" id="campoCategoria" placeholder="Ex: Pago, Pendente, Entrada ou Saída">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="fecharFormulario()">Cancelar</button>
+          <button type="submit" class="btn-save" id="btnGuardar">Gravar no Notion</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script>
@@ -48,6 +97,56 @@
       document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
       botao.classList.add("active");
       carregarDados();
+    }
+
+    function abrirFormulario() {
+      document.getElementById("erroForm").style.display = "none";
+      document.getElementById("formMovimento").reset();
+      document.getElementById("campoData").value = new Date().toISOString().split("T")[0];
+      document.getElementById("modalNovo").classList.add("open");
+    }
+
+    function fecharFormulario() {
+      document.getElementById("modalNovo").classList.remove("open");
+    }
+
+    async function salvarMovimento(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btnGuardar");
+      const erroBox = document.getElementById("erroForm");
+      btn.disabled = true;
+      btn.textContent = "A gravar...";
+      erroBox.style.display = "none";
+
+      const payload = {
+        titulo: document.getElementById("campoTitulo").value,
+        valor: document.getElementById("campoValor").value,
+        data: document.getElementById("campoData").value,
+        categoria: document.getElementById("campoCategoria").value
+      };
+
+      try {
+        const res = await fetch("/api/notion", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          erroBox.textContent = data.error || "Erro ao gravar movimento.";
+          erroBox.style.display = "block";
+        } else {
+          fecharFormulario();
+          mudarAba("movimentos", document.getElementById("tab-movimentos"));
+        }
+      } catch (err) {
+        erroBox.textContent = "Erro de rede ao enviar dados.";
+        erroBox.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Gravar no Notion";
+      }
     }
 
     async function carregarDados() {
