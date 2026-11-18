@@ -9,12 +9,26 @@
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; background: #f2f2f7; margin: 0; padding: 20px 16px; color: #1c1c1e; }
     .container { max-width: 820px; margin: 0 auto; }
+
+    /* Ecrã de Login */
+    .login-screen { max-width: 380px; margin: 70px auto; background: white; padding: 28px 24px; border-radius: 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); text-align: center; }
+    .login-icon { width: 48px; height: 48px; background: #eef6ff; color: #0071e3; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px; font-weight: 700; }
+    .login-screen h2 { margin: 0 0 6px 0; font-size: 20px; }
+    .login-screen p { margin: 0 0 20px 0; font-size: 13px; color: #6e6e73; }
+    .login-input { width: 100%; padding: 12px 14px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 16px; margin-bottom: 12px; background: #fafafa; }
+    .login-input:focus { outline: none; border-color: #0071e3; background: white; }
+    .login-btn { width: 100%; background: #0071e3; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 600; font-size: 15px; cursor: pointer; }
+    .login-btn:disabled { opacity: 0.6; }
+
+    /* Cabeçalho e Navegação */
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; gap: 10px; flex-wrap: wrap; }
     .brand h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
     .brand span { font-size: 12px; color: #6e6e73; }
-    .header-actions { display: flex; gap: 8px; }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
     .btn-new { background: #1c1c1e; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: opacity 0.15s; }
     .btn-new:hover { opacity: 0.85; }
+    .btn-logout { background: white; color: #6e6e73; border: 1px solid #d1d1d6; padding: 10px 12px; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; }
+    .btn-logout:hover { color: #d93025; border-color: #f5c2c7; }
     .tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
     .tab { background: #e5e5ea; color: #3a3a3c; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap; }
     .tab.active { background: #0071e3; color: white; box-shadow: 0 2px 8px rgba(0,113,227,0.25); }
@@ -28,15 +42,15 @@
     .prop-label { color: #8e8e93; font-size: 11px; font-weight: 600; display: block; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
     .prop-val { font-weight: 600; font-size: 14px; color: #1c1c1e; }
 
-    /* Grelha de KPIs Numéricos (Saúde Financeira) */
+    /* Grelha de KPIs Numéricos */
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
     .kpi-card { background: white; padding: 18px; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 4px solid #0071e3; }
     .kpi-label { font-size: 12px; font-weight: 600; color: #6e6e73; text-transform: uppercase; display: block; margin-bottom: 6px; }
     .kpi-value { font-size: 24px; font-weight: 700; color: #1c1c1e; letter-spacing: -0.5px; }
 
-    .erro { color: #d93025; background: #fce8e6; padding: 14px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; }
+    .erro { color: #d93025; background: #fce8e6; padding: 12px; border-radius: 10px; margin-bottom: 12px; font-size: 13px; text-align: left; }
 
-    /* Modal Profissional Dinâmico */
+    /* Modal Dinâmico */
     .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); align-items: center; justify-content: center; padding: 16px; z-index: 100; }
     .modal-bg.open { display: flex; }
     .modal { background: white; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; border-radius: 18px; padding: 22px; box-shadow: 0 12px 35px rgba(0,0,0,0.22); }
@@ -58,7 +72,20 @@
   </style>
 </head>
 <body>
-  <div class="container">
+  <!-- Ecrã de Autenticação -->
+  <div id="loginBox" class="login-screen" style="display:none;">
+    <div class="login-icon">🔒</div>
+    <h2>Acesso Restrito</h2>
+    <p>Introduza a senha do portal financeiro para continuar</p>
+    <div id="erroLogin" class="erro" style="display:none;"></div>
+    <form onsubmit="fazerLogin(event)">
+      <input type="password" id="inputSenha" class="login-input" placeholder="Senha de acesso" required autofocus>
+      <button type="submit" id="btnEntrar" class="login-btn">Entrar no Portal</button>
+    </form>
+  </div>
+
+  <!-- Painel Principal -->
+  <div id="appBox" class="container" style="display:none;">
     <header>
       <div class="brand">
         <h1>Gestão Financeira</h1>
@@ -66,6 +93,7 @@
       </div>
       <div class="header-actions">
         <button class="btn-new" id="btnNovo" onclick="abrirFormulario()">+ Novo Movimento</button>
+        <button class="btn-logout" onclick="terminarSessao()">Sair</button>
       </div>
     </header>
 
@@ -79,7 +107,7 @@
     <div id="lista">Carregando...</div>
   </div>
 
-  <!-- Modal Dinâmico por Aba -->
+  <!-- Modal Dinâmico -->
   <div class="modal-bg" id="modalNovo">
     <div class="modal">
       <h2 id="modalTitulo">Novo Registo</h2>
@@ -97,6 +125,7 @@
 
   <script>
     let abaAtual = "movimentos";
+    let intervaloSync = null;
 
     const configAbas = {
       movimentos: { btn: "+ Novo Movimento", titulo: "Novo Movimento Financeiro", sub: "Registar entrada, despesa ou conta a pagar/receber" },
@@ -104,6 +133,69 @@
       orcamentos: { btn: "+ Novo Orçamento", titulo: "Novo Orçamento Mensal", sub: "Definir previsão e realizado por categoria" },
       saude: { btn: "", titulo: "", sub: "" }
     };
+
+    function obterSenha() {
+      return localStorage.getItem("portal_financeiro_pass") || "";
+    }
+
+    function mostrarLogin(mensagemErro = "") {
+      if (intervaloSync) clearInterval(intervaloSync);
+      document.getElementById("appBox").style.display = "none";
+      document.getElementById("loginBox").style.display = "block";
+      const erroEl = document.getElementById("erroLogin");
+      if (mensagemErro) {
+        erroEl.textContent = mensagemErro;
+        erroEl.style.display = "block";
+      } else {
+        erroEl.style.display = "none";
+      }
+    }
+
+    function mostrarApp() {
+      document.getElementById("loginBox").style.display = "none";
+      document.getElementById("appBox").style.display = "block";
+      carregarDados();
+      if (intervaloSync) clearInterval(intervaloSync);
+      intervaloSync = setInterval(carregarDados, 30000);
+    }
+
+    async function fazerLogin(e) {
+      e.preventDefault();
+      const senha = document.getElementById("inputSenha").value;
+      const btn = document.getElementById("btnEntrar");
+      const erroEl = document.getElementById("erroLogin");
+
+      btn.disabled = true;
+      btn.textContent = "A verificar...";
+      erroEl.style.display = "none";
+
+      try {
+        const res = await fetch("/api/notion?auth=1", {
+          headers: { "x-app-password": senha }
+        });
+
+        if (res.ok) {
+          localStorage.setItem("portal_financeiro_pass", senha);
+          document.getElementById("inputSenha").value = "";
+          mostrarApp();
+        } else {
+          const data = await res.json();
+          erroEl.textContent = data.error || "Senha incorreta.";
+          erroEl.style.display = "block";
+        }
+      } catch (err) {
+        erroEl.textContent = "Erro de rede ao validar acesso.";
+        erroEl.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Entrar no Portal";
+      }
+    }
+
+    function terminarSessao() {
+      localStorage.removeItem("portal_financeiro_pass");
+      mostrarLogin();
+    }
 
     function mudarAba(novaAba, botao) {
       abaAtual = novaAba;
@@ -133,7 +225,14 @@
       modal.classList.add("open");
 
       try {
-        const res = await fetch(`/api/notion?tab=${abaAtual}&schema=1`);
+        const res = await fetch(`/api/notion?tab=${abaAtual}&schema=1`, {
+          headers: { "x-app-password": obterSenha() }
+        });
+        if (res.status === 401) {
+          fecharFormulario();
+          terminarSessao();
+          return;
+        }
         const data = await res.json();
 
         if (!res.ok) {
@@ -235,9 +334,17 @@
       try {
         const res = await fetch(`/api/notion?tab=${abaAtual}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-app-password": obterSenha()
+          },
           body: JSON.stringify({ valores })
         });
+        if (res.status === 401) {
+          fecharFormulario();
+          terminarSessao();
+          return;
+        }
         const data = await res.json();
 
         if (!res.ok) {
@@ -258,10 +365,17 @@
 
     async function carregarDados() {
       const lista = document.getElementById("lista");
-      lista.innerHTML = "Sincronizando...";
 
       try {
-        const res = await fetch(`/api/notion?tab=${abaAtual}`);
+        const res = await fetch(`/api/notion?tab=${abaAtual}`, {
+          headers: { "x-app-password": obterSenha() }
+        });
+
+        if (res.status === 401) {
+          mostrarLogin("Introduza a senha para aceder ao portal.");
+          return;
+        }
+
         const data = await res.json();
 
         if (!res.ok) {
@@ -315,8 +429,12 @@
       }
     }
 
-    carregarDados();
-    setInterval(carregarDados, 30000);
+    // Inicia verificando se já existe sessão guardada no dispositivo
+    if (obterSenha()) {
+      mostrarApp();
+    } else {
+      mostrarLogin();
+    }
   </script>
 </body>
 </html>
