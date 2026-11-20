@@ -1,3 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão Financeira Empresarial</title>
+  <link rel="manifest" href="/manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; background: #f2f2f7; margin: 0; padding: 20px 16px; color: #1c1c1e; }
+    .container { max-width: 960px; margin: 0 auto; }
+
+    /* Login com Utilizador e Senha */
+    .login-screen { max-width: 390px; margin: 65px auto; background: white; padding: 28px 24px; border-radius: 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); text-align: center; }
+    .login-icon { width: 48px; height: 48px; background: #eef6ff; color: #0071e3; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px; font-weight: 700; }
+    .login-screen h2 { margin: 0 0 6px 0; font-size: 20px; }
+    .login-screen p { margin: 0 0 20px 0; font-size: 13px; color: #6e6e73; }
+    .login-input { width: 100%; padding: 12px 14px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 15px; margin-bottom: 10px; background: #fafafa; }
+    .login-input:focus { outline: none; border-color: #0071e3; background: white; }
+    .login-btn { width: 100%; background: #0071e3; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 4px; }
+
+    /* Cabeçalho */
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap; }
+    .brand h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
+    .brand span { font-size: 12px; color: #6e6e73; }
+    .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .btn-new { background: #1c1c1e; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; }
+    .btn-sec { background: white; color: #1c1c1e; border: 1px solid #d1d1d6; padding: 9px 12px; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; }
+    .btn-sec:hover { background: #f8f8fa; }
+    .btn-logout { background: white; color: #6e6e73; border: 1px solid #d1d1d6; padding: 9px 12px; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; }
+
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
+    .tab { background: #e5e5ea; color: #3a3a3c; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap; }
+    .tab.active { background: #0071e3; color: white; box-shadow: 0 2px 8px rgba(0,113,227,0.25); }
+
+    /* Fila de Faturas / FT do E-mail */
+    .email-queue { background: #eef6ff; border: 1px solid #b8daff; border-radius: 14px; padding: 16px; margin-bottom: 18px; }
+    .email-queue-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
+    .email-queue-head h3 { margin: 0; font-size: 15px; color: #004085; }
+    .invoice-item { background: white; border-radius: 10px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; border: 1px solid #d6e9ff; }
+    .invoice-meta strong { display: block; font-size: 14px; color: #1c1c1e; }
+    .invoice-meta span { font-size: 12px; color: #6e6e73; display: block; }
+    .invoice-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-inv-pdf { background: #5856d6; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-inv-paid { background: #188038; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-inv-rec { background: #0071e3; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-inv-pend { background: #f29900; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-inv-ign { background: #e5e5ea; color: #3a3a3c; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+    /* Sub-abas e Filtros de Período */
+    .sub-tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+    .sub-tab { background: white; color: #3a3a3c; border: 1px solid #d1d1d6; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .sub-tab.active { background: #1c1c1e; color: white; border-color: #1c1c1e; }
+
+    /* Resumo Executivo */
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .summary-card { background: white; padding: 14px 16px; border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+    .summary-card span { font-size: 11px; font-weight: 700; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 4px; }
+    .summary-card strong { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
+    .val-in { color: #188038; }
+    .val-out { color: #d93025; }
+    .val-net { color: #0071e3; }
+    .val-warn { color: #d97706; }
+
+    /* Gráficos e Categorias Clicáveis */
+    .charts-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .chart-box { background: white; padding: 16px; border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+    .chart-box h3 { margin: 0 0 8px 0; font-size: 12px; color: #6e6e73; text-transform: uppercase; letter-spacing: 0.3px; }
+    .chart-canvas-holder { position: relative; height: 200px; width: 100%; }
+    .cat-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .cat-pill { background: #f2f2f7; border: 1px solid #e5e5ea; color: #1c1c1e; padding: 5px 10px; border-radius: 14px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .cat-pill:hover { background: #0071e3; color: white; border-color: #0071e3; }
+
+    /* Barra de Pesquisa */
+    .filters-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .filters-bar input, .filters-bar select { padding: 9px 12px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 13px; background: white; color: #1c1c1e; }
+    .filters-bar input { flex: 1; min-width: 180px; }
+
+    /* Gaveta Recolhível de Pagos / Recebidos */
+    .settled-drawer-btn { width: 100%; background: white; border: 1px solid #d1d1d6; color: #1c1c1e; padding: 13px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-top: 16px; margin-bottom: 12px; }
+
+    /* Cartões */
+    .card { background: white; padding: 16px 18px; border-radius: 14px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.03); }
+    .card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+    .card-title { font-size: 16px; font-weight: 600; color: #1c1c1e; cursor: pointer; }
+    .card-title:hover { color: #0071e3; }
+    .badge { background: #eef6ff; color: #0071e3; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .badge.pending { background: #fff3cd; color: #856404; }
+    .badge.paid { background: #e6f4ea; color: #188038; }
+    .badge.in-flow { background: #e6f4ea; color: #188038; }
+    .badge.out-flow { background: #fce8e6; color: #d93025; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; border-top: 1px solid #f2f2f7; padding-top: 12px; }
+    .prop-label { color: #8e8e93; font-size: 11px; font-weight: 600; display: block; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
+    .prop-val { font-weight: 600; font-size: 14px; color: #1c1c1e; }
+
+    .card-actions { display: flex; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed #ececef; flex-wrap: wrap; }
+    .btn-mini { background: #f2f2f7; color: #3a3a3c; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-mini.pay { background: #e6f4ea; color: #188038; }
+    .btn-mini.del { background: #fce8e6; color: #d93025; margin-left: auto; }
+
+    /* Barra Orçamento */
+    .budget-bar-wrap { margin: 10px 0 4px 0; }
+    .budget-bar-info { display: flex; justify-content: space-between; font-size: 11px; color: #6e6e73; margin-bottom: 4px; font-weight: 600; }
+    .budget-track { width: 100%; height: 8px; background: #e5e5ea; border-radius: 6px; overflow: hidden; }
+    .budget-fill { height: 100%; background: #188038; border-radius: 6px; }
+    .budget-fill.warn { background: #f29900; }
+    .budget-fill.over { background: #d93025; }
+
+    /* KPIs Saúde Financeira */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 14px; }
+    .kpi-card { background: white; padding: 18px; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 4px solid #0071e3; }
+    .kpi-label { font-size: 12px; font-weight: 600; color: #6e6e73; text-transform: uppercase; display: block; margin-bottom: 6px; }
+    .kpi-value { font-size: 24px; font-weight: 700; color: #1c1c1e; letter-spacing: -0.5px; }
+
+    .section-label { font-size: 13px; font-weight: 700; color: #6e6e73; text-transform: uppercase; letter-spacing: 0.4px; margin: 14px 0 10px 0; }
+    .erro { color: #d93025; background: #fce8e6; padding: 12px; border-radius: 10px; margin-bottom: 12px; font-size: 13px; }
+
+    /* Modais */
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+    .modal-bg.open { display: flex; }
+    .modal { background: white; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 18px; padding: 22px; box-shadow: 0 12px 35px rgba(0,0,0,0.22); }
+    .modal h2 { margin: 0 0 4px 0; font-size: 19px; }
+    .modal-sub { font-size: 13px; color: #6e6e73; margin-bottom: 18px; display: block; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: #3a3a3c; margin-bottom: 5px; }
+    .field input, .field select { width: 100%; padding: 10px 12px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 15px; font-family: inherit; background: #fafafa; }
+    .select-row { display: flex; gap: 6px; }
+    .select-row select { flex: 1; }
+    .btn-add-cat { background: #eef6ff; color: #0071e3; border: 1px solid #cce3ff; border-radius: 10px; padding: 0 12px; font-weight: 600; font-size: 13px; cursor: pointer; white-space: nowrap; }
+    .checkbox-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+    .checkbox-row input { width: 18px; height: 18px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid #f2f2f7; padding-top: 16px; }
+    .btn-cancel { background: #e5e5ea; color: #1c1c1e; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+    .btn-save { background: #0071e3; color: white; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+  </style>
+</head>
+<body>
   <!-- Ecrã de Autenticação (Utilizador + Senha + Primeiro Acesso) -->
   <div id="loginBox" class="login-screen" style="display:none;">
     <div class="login-icon">🔒</div>
@@ -26,3 +165,1030 @@
       </button>
     </form>
   </div>
+
+
+  <!-- Painel Principal -->
+  <div id="appBox" class="container" style="display:none;">
+    <header>
+      <div class="brand">
+        <h1>Gestão Financeira</h1>
+        <span id="statusSync">Sincronizado em tempo real com Notion</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn-sec" onclick="carregarDados(false)">🔄 Sincronizar</button>
+        <button class="btn-sec" id="btnScanEmail" onclick="verificarFaturasEmail(true)">📧 Faturas E-mail</button>
+        <button class="btn-sec" id="btnExport" onclick="exportarCSV()">📥 CSV</button>
+        <button class="btn-new" id="btnNovo" onclick="abrirFormulario()">+ Novo Movimento</button>
+        <button class="btn-logout" onclick="terminarSessao()">Sair</button>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" id="tab-movimentos" onclick="mudarAba('movimentos', this)">Movimentos</button>
+      <button class="tab" id="tab-folha" onclick="mudarAba('folha', this)">Folha Salarial</button>
+      <button class="tab" id="tab-orcamentos" onclick="mudarAba('orcamentos', this)">Orçamentos</button>
+      <button class="tab" id="tab-saude" onclick="mudarAba('saude', this)">Saúde Financeira</button>
+    </div>
+
+    <!-- Fila de Revisão de Faturas / FT do E-mail -->
+    <div id="filaFaturasEmail" class="email-queue" style="display:none;">
+      <div class="email-queue-head">
+        <h3>📧 Faturas (FT) detetadas nos últimos 10 dias — Confirme o estado:</h3>
+        <button class="btn-inv-ign" onclick="document.getElementById('filaFaturasEmail').style.display='none'">Fechar aviso</button>
+      </div>
+      <div id="listaFaturasEmail"></div>
+    </div>
+
+    <!-- Sub-abas de MOVIMENTOS (Período: Mensal / Trimestral / Anual / Todos + Fluxo: Todos / Entradas / Saídas) -->
+    <div id="subTabsMovimentos" class="sub-tabs" style="display:none;">
+      <button class="sub-tab active" onclick="mudarPeriodoMov('mensal', this)">📅 Mensal</button>
+      <button class="sub-tab" onclick="mudarPeriodoMov('trimestral', this)">📊 Trimestral</button>
+      <button class="sub-tab" onclick="mudarPeriodoMov('anual', this)">🏛️ Anual</button>
+      <button class="sub-tab" onclick="mudarPeriodoMov('todos', this)">🌐 Todos</button>
+      <span style="color:#d1d1d6;">|</span>
+      <button class="sub-tab active" id="fluxo-todos" onclick="mudarFluxoMov('todos', this)">Todos os Fluxos</button>
+      <button class="sub-tab" id="fluxo-entrada" onclick="mudarFluxoMov('entrada', this)">🟢 Só Entradas</button>
+      <button class="sub-tab" id="fluxo-saida" onclick="mudarFluxoMov('saida', this)">🔴 Só Saídas</button>
+    </div>
+
+    <!-- Sub-abas de FOLHA SALARIAL -->
+    <div id="subTabsFolha" class="sub-tabs" style="display:none;">
+      <button class="sub-tab active" id="sub-folha-pendentes" onclick="mudarFiltroFolha('pendentes', this)">⏳ Por Pagar (Mês)</button>
+      <button class="sub-tab" id="sub-folha-pagos" onclick="mudarFiltroFolha('pagos', this)">✅ Pagos (Mês)</button>
+      <button class="sub-tab" id="sub-folha-todos" onclick="mudarFiltroFolha('todos', this)">📋 Todos do Mês</button>
+      <input type="month" id="mesFolhaInput" style="padding:6px 10px; border-radius:10px; border:1px solid #d1d1d6; font-size:13px;" onchange="aplicarFiltros()">
+    </div>
+
+    <!-- Sub-abas de SAÚDE FINANCEIRA -->
+    <div id="subTabsSaude" class="sub-tabs" style="display:none;">
+      <button class="sub-tab active" onclick="mudarPeriodoSaude('mensal', this)">📅 Relatório Mensal</button>
+      <button class="sub-tab" onclick="mudarPeriodoSaude('trimestral', this)">📊 Relatório Trimestral</button>
+      <button class="sub-tab" onclick="mudarPeriodoSaude('anual', this)">🏛️ Relatório Anual</button>
+    </div>
+
+    <!-- Resumo Executivo -->
+    <div id="resumoExecutivo" class="summary-grid" style="display:none;">
+      <div class="summary-card"><span id="lblSum1">Entradas Realizadas</span><strong id="sumIn" class="val-in">0,00 €</strong></div>
+      <div class="summary-card"><span id="lblSum2">Saídas Realizadas</span><strong id="sumOut" class="val-out">0,00 €</strong></div>
+      <div class="summary-card"><span id="lblSum3">Saldo Pendente</span><strong id="sumPend" class="val-warn">0,00 €</strong></div>
+      <div class="summary-card"><span id="lblSum4">Previsão Atualizada</span><strong id="sumNet" class="val-net">0,00 €</strong></div>
+    </div>
+
+    <!-- Gráficos e Categorias Clicáveis -->
+    <div id="painelGraficos" class="charts-wrap" style="display:none;">
+      <div class="chart-box">
+        <h3>Distribuição por Categoria (Clique para detalhar)</h3>
+        <div class="chart-canvas-holder"><canvas id="chartCategorias"></canvas></div>
+        <div id="pilsCategorias" class="cat-pills"></div>
+      </div>
+      <div class="chart-box">
+        <h3>Entradas vs. Saídas no Período</h3>
+        <div class="chart-canvas-holder"><canvas id="chartEstados"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Barra de Pesquisa -->
+    <div id="barraFiltros" class="filters-bar" style="display:none;">
+      <input type="text" id="filtroTexto" placeholder="Pesquisar por descrição, colaborador, categoria ou valor..." oninput="aplicarFiltros()">
+      <select id="filtroCategoriaSelect" onchange="aplicarFiltros()">
+        <option value="">Todas as categorias</option>
+      </select>
+    </div>
+
+    <!-- Área Principal -->
+    <div id="lista">Carregando...</div>
+
+    <!-- Gaveta Recolhível de Pagos / Recebidos (Movimentos) -->
+    <div id="secaoLiquidados" style="display:none;">
+      <button class="settled-drawer-btn" onclick="alternarGavetaLiquidados()">
+        <span id="textoGavetaLiquidados">📁 Ver Pagos e Recebidos (0)</span>
+        <span id="setaGaveta">▼ Abrir</span>
+      </button>
+      <div id="listaLiquidados" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- Modal Dinâmico (Criar / Editar / Duplicar) -->
+  <div class="modal-bg" id="modalNovo">
+    <div class="modal">
+      <h2 id="modalTitulo">Novo Registo</h2>
+      <span class="modal-sub" id="modalSubtitulo">Preencha os campos da tabela selecionada</span>
+      <div id="erroForm" class="erro" style="display:none;"></div>
+      <form id="formDinamico" onsubmit="salvarRegisto(event)">
+        <div id="camposDinamicos">A carregar campos...</div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="fecharFormulario()">Cancelar</button>
+          <button type="submit" class="btn-save" id="btnGuardar">Gravar no Notion</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Detalhes -->
+  <div class="modal-bg" id="modalDetalhes">
+    <div class="modal">
+      <h2 id="detalheTitulo">Detalhes</h2>
+      <span class="modal-sub" id="detalheSubtitulo"></span>
+      <div id="detalheConteudo"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-save" onclick="document.getElementById('modalDetalhes').classList.remove('open')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let abaAtual = "movimentos";
+    let intervaloSync = null;
+    let itensBrutos = [];
+    let itensVisiveisExport = [];
+    let editandoPageId = null;
+
+    let gavetaAberta = false;
+    let periodoMovAtual = "mensal";  // "mensal" | "trimestral" | "anual" | "todos"
+    let fluxoMovAtual = "todos";     // "todos" | "entrada" | "saida"
+    let filtroFolhaAtual = "pendentes";
+    let periodoSaudeAtual = "mensal";
+    let dadosSaudeCache = null;
+    let faturasCache = {};
+
+    let chartCatInstance = null;
+    let chartEstInstance = null;
+
+    const configAbas = {
+      movimentos: { btn: "+ Novo Movimento", titulo: "Novo Movimento Financeiro", sub: "Registar entrada, despesa ou conta a pagar/receber" },
+      folha: { btn: "+ Novo Salário", titulo: "Registo de Folha Salarial", sub: "Inserir salário base, bonificações, descontos e encargos" },
+      orcamentos: { btn: "+ Novo Orçamento", titulo: "Novo Orçamento Mensal", sub: "Definir previsão e realizado por categoria" },
+      saude: { btn: "", titulo: "", sub: "" }
+    };
+
+    function obterCredenciais() {
+      return {
+        "x-app-user": localStorage.getItem("portal_financeiro_user") || "",
+        "x-app-password": localStorage.getItem("portal_financeiro_pass") || ""
+      };
+    }
+
+    function temSessao() {
+      return Boolean(localStorage.getItem("portal_financeiro_pass"));
+    }
+
+    function aplicarPermissoes(role) {
+      ["tab-folha", "tab-orcamentos", "tab-saude"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = role === "staff" ? "none" : "inline-block";
+      });
+    }
+
+    function mostrarLogin(mensagemErro = "") {
+      if (intervaloSync) clearInterval(intervaloSync);
+      document.getElementById("appBox").style.display = "none";
+      document.getElementById("loginBox").style.display = "block";
+      const erroEl = document.getElementById("erroLogin");
+      if (mensagemErro) {
+        erroEl.textContent = mensagemErro;
+        erroEl.style.display = "block";
+      } else {
+        erroEl.style.display = "none";
+      }
+    }
+
+    function mostrarApp(role = "admin") {
+      document.getElementById("loginBox").style.display = "none";
+      document.getElementById("appBox").style.display = "block";
+      document.getElementById("mesFolhaInput").value = new Date().toISOString().slice(0, 7);
+      aplicarPermissoes(role);
+      carregarDados();
+      verificarCiclo10DiasEmail();
+
+      if (intervaloSync) clearInterval(intervaloSync);
+      intervaloSync = setInterval(() => {
+        if (!document.getElementById("modalNovo").classList.contains("open")) {
+          carregarDados(true);
+        }
+      }, 20000);
+    }
+
+    async function fazerLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById("inputUser").value.trim();
+      const senha = document.getElementById("inputSenha").value;
+      const btn = document.getElementById("btnEntrar");
+      const erroEl = document.getElementById("erroLogin");
+      btn.disabled = true;
+      btn.textContent = "A verificar...";
+      erroEl.style.display = "none";
+
+      try {
+        const res = await fetch("/api/notion?auth=1", {
+          headers: { "x-app-user": user, "x-app-password": senha }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem("portal_financeiro_user", user);
+          localStorage.setItem("portal_financeiro_pass", senha);
+          document.getElementById("inputSenha").value = "";
+          mostrarApp(data.role || "admin");
+        } else {
+          erroEl.textContent = data.error || "Utilizador ou senha incorretos.";
+          erroEl.style.display = "block";
+        }
+      } catch (err) {
+        erroEl.textContent = "Erro de rede ao validar acesso.";
+        erroEl.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Entrar no Portal";
+      }
+    }
+
+    function terminarSessao() {
+      localStorage.removeItem("portal_financeiro_user");
+      localStorage.removeItem("portal_financeiro_pass");
+      mostrarLogin();
+    }
+
+    // --- LEITURA DE FATURAS / FT E PDF NO E-MAIL ---
+    function verificarCiclo10DiasEmail() {
+      const ultimaVerif = parseInt(localStorage.getItem("ultimo_scan_email_ts") || "0", 10);
+      const dezDiasMs = 10 * 24 * 60 * 60 * 1000;
+      if (Date.now() - ultimaVerif >= dezDiasMs) {
+        verificarFaturasEmail(false);
+      }
+    }
+
+    async function verificarFaturasEmail(manual = false) {
+      const btn = document.getElementById("btnScanEmail");
+      if (manual) {
+        btn.disabled = true;
+        btn.textContent = "⏳ A ler PDFs...";
+      }
+
+      try {
+        const res = await fetch("/api/scan-emails", { headers: obterCredenciais() });
+        const data = await res.json();
+        localStorage.setItem("ultimo_scan_email_ts", String(Date.now()));
+
+        if (!data.configured) {
+          if (manual) alert(data.message);
+          return;
+        }
+
+        const processadas = JSON.parse(localStorage.getItem("faturas_email_processadas") || "[]");
+        const novasFaturas = (data.faturas || []).filter(f => !processadas.includes(f.uid));
+
+        if (novasFaturas.length === 0) {
+          if (manual) alert("Nenhuma fatura (FT) nova encontrada nos últimos 10 dias.");
+          return;
+        }
+
+        renderizarFilaFaturas(novasFaturas);
+      } catch (e) {
+        if (manual) alert("Erro ao verificar e-mail: " + e.message);
+      } finally {
+        if (manual) {
+          btn.disabled = false;
+          btn.textContent = "📧 Faturas E-mail";
+        }
+      }
+    }
+
+    function descarregarPdfAnexo(uid) {
+      const fat = faturasCache[uid];
+      if (!fat || !fat.pdfBase64) return;
+      const link = document.createElement("a");
+      link.href = "data:application/pdf;base64," + fat.pdfBase64;
+      link.download = fat.nomeArquivoPdf || `Fatura_${uid}.pdf`;
+      link.click();
+    }
+
+    function renderizarFilaFaturas(faturas) {
+      const box = document.getElementById("filaFaturasEmail");
+      const lista = document.getElementById("listaFaturasEmail");
+      box.style.display = "block";
+      faturas.forEach(f => { faturasCache[f.uid] = f; });
+
+      lista.innerHTML = faturas.map(f => `
+        <div class="invoice-item" id="inv_row_${f.uid}">
+          <div class="invoice-meta">
+            <strong>${f.descricao} — ${Number(f.valor || 0).toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</strong>
+            <span>De: ${f.remetente} · Data: ${f.data} ${f.nomeArquivoPdf ? `· 📎 ${f.nomeArquivoPdf}` : ""}</span>
+          </div>
+          <div class="invoice-btns">
+            ${f.pdfBase64 ? `<button class="btn-inv-pdf" onclick="descarregarPdfAnexo('${f.uid}')">📄 Abrir PDF</button>` : ""}
+            <button class="btn-inv-paid" onclick="confirmarFaturaEmail('${f.uid}', 'Pago', 'saida')">✓ Foi Paga</button>
+            <button class="btn-inv-rec" onclick="confirmarFaturaEmail('${f.uid}', 'Recebido', 'entrada')">✓ Foi Recebida</button>
+            <button class="btn-inv-pend" onclick="confirmarFaturaEmail('${f.uid}', 'Pendente', 'saida')">⏳ Pendente</button>
+            <button class="btn-inv-ign" onclick="ignorarFaturaEmail('${f.uid}')">Ignorar</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function confirmarFaturaEmail(uid, estado, tipo) {
+      const fatura = faturasCache[uid];
+      if (!fatura) return;
+
+      try {
+        const res = await fetch("/api/notion?tab=movimentos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...obterCredenciais() },
+          body: JSON.stringify({
+            fromEmailInvoice: {
+              descricao: fatura.descricao,
+              valor: fatura.valor,
+              data: fatura.data,
+              remetente: fatura.remetente,
+              nomeArquivoPdf: fatura.nomeArquivoPdf,
+              estado,
+              tipo
+            }
+          })
+        });
+
+        if (res.ok) {
+          ignorarFaturaEmail(uid);
+          if (abaAtual === "movimentos") carregarDados();
+        } else {
+          const err = await res.json();
+          alert(err.error || "Erro ao gravar fatura nos Movimentos.");
+        }
+      } catch (e) {
+        alert("Erro de rede ao registar fatura.");
+      }
+    }
+
+    function ignorarFaturaEmail(uid) {
+      const processadas = JSON.parse(localStorage.getItem("faturas_email_processadas") || "[]");
+      if (!processadas.includes(uid)) {
+        processadas.push(uid);
+        localStorage.setItem("faturas_email_processadas", JSON.stringify(processadas));
+      }
+      const row = document.getElementById(`inv_row_${uid}`);
+      if (row) row.remove();
+      if (document.getElementById("listaFaturasEmail").children.length === 0) {
+        document.getElementById("filaFaturasEmail").style.display = "none";
+      }
+    }
+
+    // --- FILTROS DE PERÍODO E NAVEGAÇÃO ---
+    function correspondeAoPeriodo(iso, periodo) {
+      if (periodo === "todos" || !iso) return true;
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return true;
+      const agora = new Date();
+      if (periodo === "anual") return d.getFullYear() === agora.getFullYear();
+      if (periodo === "trimestral") return d.getFullYear() === agora.getFullYear() && Math.floor(d.getMonth() / 3) === Math.floor(agora.getMonth() / 3);
+      return d.getFullYear() === agora.getFullYear() && d.getMonth() === agora.getMonth();
+    }
+
+    function mudarAba(novaAba, botao) {
+      abaAtual = novaAba;
+      gavetaAberta = false;
+      document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+      botao.classList.add("active");
+
+      const btnNovo = document.getElementById("btnNovo");
+      if (configAbas[novaAba].btn) {
+        btnNovo.style.display = "inline-block";
+        btnNovo.textContent = configAbas[novaAba].btn;
+      } else {
+        btnNovo.style.display = "none";
+      }
+
+      document.getElementById("filtroTexto").value = "";
+      document.getElementById("filtroCategoriaSelect").value = "";
+      carregarDados();
+    }
+
+    function mudarPeriodoMov(periodo, btn) {
+      periodoMovAtual = periodo;
+      btn.parentElement.querySelectorAll(".sub-tab").forEach((b, i) => { if (i < 4) b.classList.remove("active"); });
+      btn.classList.add("active");
+      aplicarFiltros();
+    }
+
+    function mudarFluxoMov(fluxo, btn) {
+      fluxoMovAtual = fluxo;
+      ["fluxo-todos", "fluxo-entrada", "fluxo-saida"].forEach(id => document.getElementById(id).classList.remove("active"));
+      btn.classList.add("active");
+      aplicarFiltros();
+    }
+
+    function mudarFiltroFolha(filtro, btn) {
+      filtroFolhaAtual = filtro;
+      document.querySelectorAll("#subTabsFolha .sub-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      aplicarFiltros();
+    }
+
+    function mudarPeriodoSaude(periodo, btn) {
+      periodoSaudeAtual = periodo;
+      document.querySelectorAll("#subTabsSaude .sub-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      if (dadosSaudeCache) renderizarSaudeFinanceira(dadosSaudeCache);
+    }
+
+    function alternarGavetaLiquidados() {
+      gavetaAberta = !gavetaAberta;
+      document.getElementById("listaLiquidados").style.display = gavetaAberta ? "block" : "none";
+      document.getElementById("setaGaveta").textContent = gavetaAberta ? "▲ Fechar" : "▼ Abrir";
+    }
+
+    // --- DETALHES AO CLICAR NA CATEGORIA OU COLABORADOR ---
+    function abrirDetalhesCategoria(categoria) {
+      const itensCat = itensBrutos.filter(i => i.categoria === categoria);
+      const total = itensCat.reduce((acc, i) => acc + Math.abs(i.valorNumerico || 0), 0);
+
+      document.getElementById("detalheTitulo").textContent = `Categoria: ${categoria}`;
+      document.getElementById("detalheSubtitulo").textContent = `${itensCat.length} lançamento(s) · Total acumulado: ${total.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €`;
+
+      document.getElementById("detalheConteudo").innerHTML = itensCat.map(item => `
+        <div class="card" style="background:#f9f9fb; margin-bottom:8px;">
+          <div class="card-top">
+            <span class="card-title">${item.titulo}</span>
+            <span class="badge ${item.isSettled ? "paid" : "pending"}">${item.status}</span>
+          </div>
+          <div class="grid">
+            ${item.colunas.map(c => `<div><span class="prop-label">${c.nome}</span><span class="prop-val">${c.valor}</span></div>`).join("")}
+          </div>
+        </div>
+      `).join("");
+
+      document.getElementById("modalDetalhes").classList.add("open");
+    }
+
+    function abrirDetalhesColaborador(item) {
+      document.getElementById("detalheTitulo").textContent = `Colaborador: ${item.titulo}`;
+      document.getElementById("detalheSubtitulo").textContent = `Estado atual: ${item.status} · Referência: ${item.dataIso || "Mês corrente"}`;
+
+      document.getElementById("detalheConteudo").innerHTML = `
+        <div class="grid" style="border-top:none; padding-top:4px;">
+          ${item.colunas.map(c => `
+            <div style="background:#f9f9fb; padding:10px; border-radius:10px;">
+              <span class="prop-label">${c.nome}</span>
+              <span class="prop-val">${c.valor}</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+      document.getElementById("modalDetalhes").classList.add("open");
+    }
+
+    // --- CRUD DINÂMICO ---
+    async function abrirFormulario(itemExistente = null, isDuplicate = false) {
+      const modal = document.getElementById("modalNovo");
+      const container = document.getElementById("camposDinamicos");
+      const erroBox = document.getElementById("erroForm");
+
+      editandoPageId = (itemExistente && !isDuplicate) ? itemExistente.id : null;
+      document.getElementById("modalTitulo").textContent = editandoPageId
+        ? "Editar Registo"
+        : (isDuplicate ? "Duplicar Lançamento" : configAbas[abaAtual].titulo);
+      document.getElementById("modalSubtitulo").textContent = editandoPageId
+        ? "Altere os campos desejados para atualizar no Notion"
+        : configAbas[abaAtual].sub;
+
+      erroBox.style.display = "none";
+      container.innerHTML = "<p>A carregar estrutura de campos...</p>";
+      modal.classList.add("open");
+
+      try {
+        const res = await fetch(`/api/notion?tab=${abaAtual}&schema=1`, { headers: obterCredenciais() });
+        if (res.status === 401) { fecharFormulario(); terminarSessao(); return; }
+        const data = await res.json();
+
+        if (!res.ok) {
+          container.innerHTML = `<div class="erro">${data.error}</div>`;
+          return;
+        }
+
+        const hoje = new Date().toISOString().split("T")[0];
+        const rawVals = itemExistente ? itemExistente.raw : {};
+
+        container.innerHTML = data.campos.map((campo, idx) => {
+          const idCampo = `campo_${idx}`;
+          const valAtual = rawVals[campo.nome] !== undefined ? rawVals[campo.nome] : "";
+
+          if (campo.tipo === "select" || campo.tipo === "status" || campo.tipo === "multi_select") {
+            const listaOpts = [...campo.opcoes];
+            if (valAtual && !listaOpts.includes(valAtual)) listaOpts.push(valAtual);
+            const optsHtml = listaOpts.map(o => `<option value="${o}" ${o === valAtual ? "selected" : ""}>${o}</option>`).join("");
+            return `
+              <div class="field">
+                <label>${campo.nome}</label>
+                <div class="select-row">
+                  <select id="${idCampo}" data-col="${campo.nome}">
+                    <option value="">-- Selecionar --</option>
+                    ${optsHtml}
+                  </select>
+                  <button type="button" class="btn-add-cat" onclick="criarNovaOpcao('${idCampo}', '${campo.nome}')">+ Nova</button>
+                </div>
+              </div>
+            `;
+          }
+
+          if (campo.tipo === "number") {
+            return `
+              <div class="field">
+                <label>${campo.nome} (€)</label>
+                <input type="number" step="0.01" data-col="${campo.nome}" value="${valAtual}" placeholder="0.00">
+              </div>
+            `;
+          }
+
+          if (campo.tipo === "date") {
+            const dataCampo = isDuplicate ? hoje : (valAtual || hoje);
+            return `
+              <div class="field">
+                <label>${campo.nome}</label>
+                <input type="date" data-col="${campo.nome}" value="${dataCampo}">
+              </div>
+            `;
+          }
+
+          if (campo.tipo === "checkbox") {
+            return `
+              <div class="field">
+                <label class="checkbox-row">
+                  <input type="checkbox" data-col="${campo.nome}" ${valAtual ? "checked" : ""}>
+                  <span>${campo.nome}</span>
+                </label>
+              </div>
+            `;
+          }
+
+          return `
+            <div class="field">
+              <label>${campo.nome} ${campo.tipo === "title" ? "*" : ""}</label>
+              <input type="text" data-col="${campo.nome}" value="${String(valAtual).replace(/"/g, '&quot;')}" ${campo.tipo === "title" ? "required" : ""} placeholder="Escreva aqui...">
+            </div>
+          `;
+        }).join("");
+      } catch (e) {
+        container.innerHTML = `<div class="erro">Erro de ligação ao carregar formulário.</div>`;
+      }
+    }
+
+    function criarNovaOpcao(selectId, nomeColuna) {
+      const nova = prompt(`Criar nova categoria/opção em "${nomeColuna}":`);
+      if (nova && nova.trim() !== "") {
+        const select = document.getElementById(selectId);
+        const opt = document.createElement("option");
+        opt.value = nova.trim();
+        opt.textContent = nova.trim();
+        opt.selected = true;
+        select.appendChild(opt);
+      }
+    }
+
+    function fecharFormulario() {
+      editandoPageId = null;
+      document.getElementById("modalNovo").classList.remove("open");
+    }
+
+    async function salvarRegisto(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btnGuardar");
+      const erroBox = document.getElementById("erroForm");
+      btn.disabled = true;
+      btn.textContent = "A gravar...";
+      erroBox.style.display = "none";
+
+      const valores = {};
+      document.querySelectorAll("#camposDinamicos [data-col]").forEach(el => {
+        const col = el.getAttribute("data-col");
+        valores[col] = el.type === "checkbox" ? el.checked : el.value;
+      });
+
+      const metodo = editandoPageId ? "PATCH" : "POST";
+      const payload = editandoPageId ? { pageId: editandoPageId, valores } : { valores };
+
+      try {
+        const res = await fetch(`/api/notion?tab=${abaAtual}`, {
+          method: metodo,
+          headers: { "Content-Type": "application/json", ...obterCredenciais() },
+          body: JSON.stringify(payload)
+        });
+        if (res.status === 401) { fecharFormulario(); terminarSessao(); return; }
+        const data = await res.json();
+
+        if (!res.ok) {
+          erroBox.textContent = data.error || "Erro ao gravar no Notion.";
+          erroBox.style.display = "block";
+        } else {
+          fecharFormulario();
+          carregarDados();
+        }
+      } catch (err) {
+        erroBox.textContent = "Erro de rede ao enviar dados.";
+        erroBox.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Gravar no Notion";
+      }
+    }
+
+    async function marcarComoPago(pageId) {
+      try {
+        const res = await fetch(`/api/notion?tab=${abaAtual}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", ...obterCredenciais() },
+          body: JSON.stringify({ pageId, quickPaid: true })
+        });
+        const data = await res.json();
+        if (!res.ok) alert(data.error || "Não foi possível atualizar o estado.");
+        else carregarDados();
+      } catch (e) {
+        alert("Erro de rede ao atualizar registo.");
+      }
+    }
+
+    async function apagarRegisto(pageId, titulo) {
+      if (!confirm(`Tem a certeza que deseja remover "${titulo}"?`)) return;
+      try {
+        const res = await fetch(`/api/notion?tab=${abaAtual}&id=${pageId}`, {
+          method: "DELETE",
+          headers: obterCredenciais()
+        });
+        if (res.ok) carregarDados();
+      } catch (e) {
+        alert("Erro de rede ao remover registo.");
+      }
+    }
+
+    // --- FILTRAGEM E SEPARAÇÃO POR ABA ---
+    function popularCategorias(items) {
+      const sel = document.getElementById("filtroCategoriaSelect");
+      const atual = sel.value;
+      const cats = [...new Set(items.map(i => i.categoria).filter(Boolean))];
+      sel.innerHTML = `<option value="">Todas as categorias</option>` +
+        cats.map(c => `<option value="${c}" ${c === atual ? "selected" : ""}>${c}</option>`).join("");
+    }
+
+    function aplicarFiltros() {
+      const termo = document.getElementById("filtroTexto").value.toLowerCase().trim();
+      const catFiltro = document.getElementById("filtroCategoriaSelect").value;
+      const mesFolha = document.getElementById("mesFolhaInput").value;
+
+      let base = itensBrutos.filter(item => {
+        if (catFiltro && item.categoria !== catFiltro) return false;
+        if (termo) {
+          const txt = [item.titulo, item.status, item.categoria, ...item.colunas.map(c => c.valor)].join(" ").toLowerCase();
+          if (!txt.includes(termo)) return false;
+        }
+        return true;
+      });
+
+      // FOLHA SALARIAL (Todos os colaboradores do Notion sem limites + filtro de mês)
+      if (abaAtual === "folha") {
+        document.getElementById("secaoLiquidados").style.display = "none";
+
+        const doMes = base.filter(i => !mesFolha || !i.dataIso || i.dataIso.startsWith(mesFolha));
+        const pendentesFolha = doMes.filter(i => !i.isSettled);
+        const pagosFolha = doMes.filter(i => i.isSettled);
+
+        document.getElementById("sub-folha-pendentes").textContent = `⏳ Por Pagar (${pendentesFolha.length})`;
+        document.getElementById("sub-folha-pagos").textContent = `✅ Pagos (${pagosFolha.length})`;
+        document.getElementById("sub-folha-todos").textContent = `📋 Todos do Mês (${doMes.length})`;
+
+        let listaAtiva = doMes;
+        if (filtroFolhaAtual === "pendentes") listaAtiva = pendentesFolha;
+        if (filtroFolhaAtual === "pagos") listaAtiva = pagosFolha;
+
+        itensVisiveisExport = listaAtiva;
+        atualizarResumoEGraficos(doMes, true);
+        document.getElementById("lista").innerHTML = listaAtiva.length
+          ? listaAtiva.map(item => renderizarCard(item, true)).join("")
+          : "<p>Nenhum colaborador encontrado neste separador.</p>";
+        return;
+      }
+
+      // MOVIMENTOS FINANCEIROS (Mensal/Trimestral/Anual + Separação Entrada/Saída + Gaveta Liquidados)
+      if (abaAtual === "movimentos") {
+        const noPeriodo = base.filter(i => correspondeAoPeriodo(i.dataIso, periodoMovAtual));
+        const filtradosFluxo = noPeriodo.filter(i => fluxoMovAtual === "todos" || i.tipoFluxo === fluxoMovAtual);
+
+        const pendentes = filtradosFluxo.filter(i => !i.isSettled);
+        const liquidados = filtradosFluxo.filter(i => i.isSettled);
+
+        itensVisiveisExport = filtradosFluxo;
+        atualizarResumoEGraficos(noPeriodo, false);
+
+        document.getElementById("lista").innerHTML = `
+          <div class="section-label">⏳ Pendências a Pagar / Receber (${pendentes.length})</div>
+          ${pendentes.length ? pendentes.map(item => renderizarCard(item, false)).join("") : "<p>Sem pendências neste período.</p>"}
+        `;
+
+        const secLiq = document.getElementById("secaoLiquidados");
+        secLiq.style.display = "block";
+        document.getElementById("textoGavetaLiquidados").textContent = `📁 Ver Pagos e Recebidos (${liquidados.length})`;
+        document.getElementById("listaLiquidados").innerHTML = liquidados.length
+          ? liquidados.map(item => renderizarCard(item, false)).join("")
+          : "<p>Nenhum movimento pago ou recebido neste período.</p>";
+        return;
+      }
+
+      // ORÇAMENTOS
+      document.getElementById("secaoLiquidados").style.display = "none";
+      itensVisiveisExport = base;
+      atualizarResumoEGraficos(base, false);
+      document.getElementById("lista").innerHTML = base.length
+        ? base.map(item => renderizarCard(item, false)).join("")
+        : "<p>Nenhum orçamento encontrado.</p>";
+    }
+
+    function renderizarCard(item, isColaborador) {
+      const badgeClass = item.isSettled ? "badge paid" : "badge pending";
+      const flowBadge = !isColaborador
+        ? `<span class="badge ${item.tipoFluxo === "entrada" ? "in-flow" : "out-flow"}">${item.tipoFluxo === "entrada" ? "↑ Entrada" : "↓ Saída"}</span>`
+        : "";
+
+      let barraOrcamentoHtml = "";
+      if (abaAtual === "orcamentos") {
+        const colPrev = item.colunas.find(c => /prev|orçad|orcad|meta|limite/i.test(c.nome) && c.rawNum > 0);
+        const colReal = item.colunas.find(c => /real|gast|execut|atual/i.test(c.nome) && c.rawNum !== null);
+        if (colPrev && colReal) {
+          const pct = Math.round((colReal.rawNum / colPrev.rawNum) * 100);
+          const width = Math.min(pct, 100);
+          const fillClass = pct > 100 ? "budget-fill over" : (pct >= 80 ? "budget-fill warn" : "budget-fill");
+          barraOrcamentoHtml = `
+            <div class="budget-bar-wrap">
+              <div class="budget-bar-info"><span>Execução</span><span>${pct}% (${colReal.valor} € / ${colPrev.valor} €)</span></div>
+              <div class="budget-track"><div class="${fillClass}" style="width:${width}%"></div></div>
+            </div>
+          `;
+        }
+      }
+
+      return `
+        <div class="card">
+          <div class="card-top">
+            <span class="card-title" onclick='${isColaborador ? `abrirDetalhesColaborador(${JSON.stringify(item).replace(/'/g, "&#39;")})` : `abrirDetalhesCategoria("${item.categoria}")`}'>
+              ${item.titulo} ${isColaborador ? "👤" : ""}
+            </span>
+            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+              ${flowBadge}
+              <span class="cat-pill" onclick='abrirDetalhesCategoria("${item.categoria}")'>${item.categoria}</span>
+              <span class="${badgeClass}">${item.status}</span>
+            </div>
+          </div>
+          ${barraOrcamentoHtml}
+          ${item.colunas.length > 0 ? `
+            <div class="grid">
+              ${item.colunas.map(c => `<div><span class="prop-label">${c.nome}</span><span class="prop-val">${c.valor}</span></div>`).join("")}
+            </div>
+          ` : ""}
+          <div class="card-actions">
+            ${!item.isSettled ? `<button class="btn-mini pay" onclick="marcarComoPago('${item.id}')">✓ Marcar ${item.tipoFluxo === "entrada" ? "Recebido" : "Pago"}</button>` : ""}
+            ${isColaborador ? `<button class="btn-mini" onclick='abrirDetalhesColaborador(${JSON.stringify(item).replace(/'/g, "&#39;")})'>👤 Ficha Colaborador</button>` : ""}
+            <button class="btn-mini" onclick='abrirFormulario(${JSON.stringify(item).replace(/'/g, "&#39;")}, false)'>✏️ Editar</button>
+            <button class="btn-mini" onclick='abrirFormulario(${JSON.stringify(item).replace(/'/g, "&#39;")}, true)'>📋 Duplicar</button>
+            <button class="btn-mini del" onclick="apagarRegisto('${item.id}', '${item.titulo.replace(/'/g, "\\'")}')">🗑 Remover</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function atualizarResumoEGraficos(items, isFolha) {
+      let entRealizadas = 0;
+      let saiRealizadas = 0;
+      let aReceberPend = 0;
+      let aPagarPend = 0;
+      const porCategoria = {};
+
+      items.forEach(item => {
+        const val = Math.abs(item.valorNumerico || 0);
+        const isSaida = isFolha || item.tipoFluxo === "saida";
+
+        if (item.isSettled) {
+          if (isSaida) saiRealizadas += val;
+          else entRealizadas += val;
+        } else {
+          if (isSaida) aPagarPend += val;
+          else aReceberPend += val;
+        }
+
+        const cat = item.categoria || "Geral";
+        porCategoria[cat] = (porCategoria[cat] || 0) + (val || 1);
+      });
+
+      const saldoPendente = aReceberPend - aPagarPend;
+      const previsaoAtual = (entRealizadas - saiRealizadas) + saldoPendente;
+
+      document.getElementById("lblSum1").textContent = isFolha ? "Total Colaboradores" : "Entradas Realizadas";
+      document.getElementById("lblSum2").textContent = isFolha ? "Salários Pagos" : "Saídas Realizadas";
+      document.getElementById("lblSum3").textContent = isFolha ? "Salários Por Pagar" : "Pendentes (Receber - Pagar)";
+      document.getElementById("lblSum4").textContent = isFolha ? "Custo Total Folha" : "Previsão Atualizada";
+
+      if (isFolha) {
+        document.getElementById("sumIn").textContent = items.length + " colab.";
+        document.getElementById("sumOut").textContent = saiRealizadas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+        document.getElementById("sumPend").textContent = aPagarPend.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+        document.getElementById("sumNet").textContent = (saiRealizadas + aPagarPend).toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      } else {
+        document.getElementById("sumIn").textContent = entRealizadas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+        document.getElementById("sumOut").textContent = saiRealizadas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+        document.getElementById("sumPend").textContent = saldoPendente.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+        document.getElementById("sumNet").textContent = previsaoAtual.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      }
+
+      const catsKeys = Object.keys(porCategoria);
+      document.getElementById("pilsCategorias").innerHTML = catsKeys.map(c =>
+        `<button class="cat-pill" onclick='abrirDetalhesCategoria("${c}")'>🔍 ${c} (${porCategoria[c].toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €)</button>`
+      ).join("");
+
+      if (typeof Chart === "undefined") return;
+      const ctxCat = document.getElementById("chartCategorias");
+      const ctxEst = document.getElementById("chartEstados");
+      if (!ctxCat || !ctxEst) return;
+
+      if (chartCatInstance) chartCatInstance.destroy();
+      if (chartEstInstance) chartEstInstance.destroy();
+
+      chartCatInstance = new Chart(ctxCat, {
+        type: "doughnut",
+        data: {
+          labels: catsKeys,
+          datasets: [{
+            data: Object.values(porCategoria),
+            backgroundColor: ["#0071e3", "#34c759", "#ff9500", "#ff3b30", "#af52de", "#5ac8fa", "#8e8e93"]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (_, elements) => {
+            if (elements.length > 0) abrirDetalhesCategoria(catsKeys[elements[0].index]);
+          },
+          plugins: { legend: { position: "right" } }
+        }
+      });
+
+      chartEstInstance = new Chart(ctxEst, {
+        type: "bar",
+        data: {
+          labels: ["Entradas Realizadas", "Saídas Realizadas", "A Receber", "A Pagar"],
+          datasets: [{
+            label: "Valor (€)",
+            data: [entRealizadas, saiRealizadas, aReceberPend, aPagarPend],
+            backgroundColor: ["#188038", "#d93025", "#0071e3", "#f29900"],
+            borderRadius: 6
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+    }
+
+    // --- SAÚDE FINANCEIRA (MENSAL / TRIMESTRAL / ANUAL COM CÁLCULO REALIZADO EXATO) ---
+    function renderizarSaudeFinanceira(data) {
+      dadosSaudeCache = data;
+
+      const movPeriodo = (data.movimentos || []).filter(m => correspondeAoPeriodo(m.dataIso, periodoSaudeAtual));
+      const salPeriodo = (data.salarios || []).filter(s => correspondeAoPeriodo(s.dataIso, periodoSaudeAtual));
+
+      let entradasPagas = 0;
+      let entradasReceber = 0;
+      let saidasPagas = 0;
+      let saidasPagar = 0;
+
+      movPeriodo.forEach(m => {
+        const v = Math.abs(m.valorNumerico || 0);
+        if (m.tipoFluxo === "entrada") {
+          if (m.isSettled) entradasPagas += v;
+          else entradasReceber += v;
+        } else {
+          if (m.isSettled) saidasPagas += v;
+          else saidasPagar += v;
+        }
+      });
+
+      salPeriodo.forEach(s => {
+        const v = Math.abs(s.valorNumerico || 0);
+        if (s.isSettled) saidasPagas += v;
+        else saidasPagar += v;
+      });
+
+      const saldoRealizado = entradasPagas - saidasPagas;
+      const previsaoAtualizada = saldoRealizado + entradasReceber - saidasPagar;
+
+      document.getElementById("resumoExecutivo").style.display = "grid";
+      document.getElementById("lblSum1").textContent = "Entradas Realizadas";
+      document.getElementById("lblSum2").textContent = "Saídas Realizadas (c/ Salários)";
+      document.getElementById("lblSum3").textContent = "Pendentes (Receber - Pagar)";
+      document.getElementById("lblSum4").textContent = "Previsão Final Atualizada";
+
+      document.getElementById("sumIn").textContent = entradasPagas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      document.getElementById("sumOut").textContent = saidasPagas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      document.getElementById("sumPend").textContent = (entradasReceber - saidasPagar).toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      document.getElementById("sumNet").textContent = previsaoAtualizada.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+
+      const agora = new Date();
+      const nomePeriodo = periodoSaudeAtual === "anual"
+        ? `Ano ${agora.getFullYear()}`
+        : (periodoSaudeAtual === "trimestral" ? `${Math.floor(agora.getMonth() / 3) + 1}º Trimestre de ${agora.getFullYear()}` : `${String(agora.getMonth() + 1).padStart(2, "0")}/${agora.getFullYear()}`);
+
+      document.getElementById("lista").innerHTML = `
+        <div class="card">
+          <div class="card-top">
+            <span class="card-title">Demonstrativo Consolidado — ${nomePeriodo}</span>
+            <span class="badge ${previsaoAtualizada >= 0 ? "paid" : "pending"}">${previsaoAtualizada >= 0 ? "Superávit Previsto" : "Atenção ao Fluxo"}</span>
+          </div>
+          <div class="grid">
+            <div><span class="prop-label">Entradas já Recebidas</span><span class="prop-val val-in">+ ${entradasPagas.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
+            <div><span class="prop-label">Entradas a Receber</span><span class="prop-val">+ ${entradasReceber.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
+            <div><span class="prop-label">Saídas e Salários Pagos</span><span class="prop-val val-out">- ${saidasPagas.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
+            <div><span class="prop-label">Contas e Salários a Pagar</span><span class="prop-val val-warn">- ${saidasPagar.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
+            <div><span class="prop-label">Caixa Atual (Realizado)</span><span class="prop-val">${saldoRealizado.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
+            <div><span class="prop-label">Previsão Atualizada</span><span class="prop-val val-net">${previsaoAtualizada.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
+          </div>
+        </div>
+        ${(data.kpis && data.kpis.length > 0) ? `
+          <div class="section-label">Indicadores Extraídos do Notion</div>
+          <div class="kpi-grid">
+            ${data.kpis.map(k => `<div class="kpi-card"><span class="kpi-label">${k.indicador}</span><div class="kpi-value">${k.valor}</div></div>`).join("")}
+          </div>
+        ` : ""}
+      `;
+    }
+
+    function exportarCSV() {
+      if (!itensVisiveisExport.length) {
+        alert("Não há registos visíveis para exportar.");
+        return;
+      }
+      const cabecalhos = ["Título", "Fluxo", "Categoria", "Estado", ...new Set(itensVisiveisExport.flatMap(i => i.colunas.map(c => c.nome)))];
+      const linhas = [cabecalhos.join(";")];
+
+      itensVisiveisExport.forEach(item => {
+        const mapa = { "Título": item.titulo, "Fluxo": item.tipoFluxo, "Categoria": item.categoria, "Estado": item.status };
+        item.colunas.forEach(c => { mapa[c.nome] = c.valor; });
+        linhas.push(cabecalhos.map(h => `"${String(mapa[h] || "").replace(/"/g, '""')}"`).join(";"));
+      });
+
+      const blob = new Blob(["\uFEFF" + linhas.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `relatorio-${abaAtual}-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function carregarDados(silencioso = false) {
+      const lista = document.getElementById("lista");
+      if (!silencioso) lista.innerHTML = "Carregando...";
+
+      document.getElementById("subTabsMovimentos").style.display = abaAtual === "movimentos" ? "flex" : "none";
+      document.getElementById("subTabsFolha").style.display = abaAtual === "folha" ? "flex" : "none";
+      document.getElementById("subTabsSaude").style.display = abaAtual === "saude" ? "flex" : "none";
+
+      try {
+        const res = await fetch(`/api/notion?tab=${abaAtual}&t=${Date.now()}`, {
+          headers: obterCredenciais()
+        });
+
+        if (res.status === 401) {
+          mostrarLogin("Sessão expirada. Introduza o utilizador e senha.");
+          return;
+        }
+
+        const data = await res.json();
+        if (data.role) aplicarPermissoes(data.role);
+
+        if (!res.ok) {
+          lista.innerHTML = `<div class="erro">${data.error}</div>`;
+          return;
+        }
+
+        document.getElementById("statusSync").textContent = `Sincronizado com Notion às ${new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
+
+        if (data.mode === "saude_completa") {
+          document.getElementById("barraFiltros").style.display = "none";
+          document.getElementById("painelGraficos").style.display = "none";
+          document.getElementById("secaoLiquidados").style.display = "none";
+          document.getElementById("btnExport").style.display = "none";
+          renderizarSaudeFinanceira(data);
+          return;
+        }
+
+        document.getElementById("resumoExecutivo").style.display = "grid";
+        document.getElementById("barraFiltros").style.display = "flex";
+        document.getElementById("painelGraficos").style.display = "grid";
+        document.getElementById("btnExport").style.display = "inline-block";
+
+        itensBrutos = data.items || [];
+        popularCategorias(itensBrutos);
+        aplicarFiltros();
+      } catch (err) {
+        if (!silencioso) lista.innerHTML = `<div class="erro">Erro de rede ao carregar dados.</div>`;
+      }
+    }
+
+    if (temSessao()) {
+      mostrarApp();
+    } else {
+      mostrarLogin();
+    }
+  </script>
+</body>
+</html>
