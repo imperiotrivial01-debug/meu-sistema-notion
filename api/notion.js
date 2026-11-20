@@ -56,20 +56,18 @@ export default async function handler(req, res) {
     }
   }
 
-  // 1. AUTENTICAÇÃO (VERIFICA CHAVE MESTRA DA VERCEL OU TABELA UTILIZADORES DO NOTION)
+  // 1. AUTENTICAÇÃO
   let role = "admin";
   const userRecebido = (req.headers["x-app-user"] || req.body?.username || "").trim().toLowerCase();
-  const senhaRecebida = req.headers["x-app-password"] || req.body?.password || "";
+  const senhaRecebida = (req.headers["x-app-password"] || req.body?.password || "");
 
   let autenticado = false;
 
-  // Verifica primeiro a chave mestra da Vercel (se configurada)
   if (APP_PASSWORD && senhaRecebida === APP_PASSWORD && (!APP_USER || userRecebido === APP_USER.trim().toLowerCase())) {
     autenticado = true;
     role = "admin";
   }
 
-  // Se não entrou pela chave mestra, valida na tabela Utilizadores do Notion
   if (!autenticado && NOTION_USERS_ID && userRecebido && senhaRecebida) {
     const userPage = await buscarUtilizadorNotion(NOTION_USERS_ID, userRecebido, headers);
     if (userPage) {
@@ -108,6 +106,72 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "NOTION_TOKEN não configurado na Vercel." });
   }
 
+  // 6. SAÚDE FINANCEIRA COMPLETA (FUNCIONA MESMO SEM NOTION_SAUDE_ID E NÃO FALHA SE UM BLOCO DER ERRO)
+  if (tab === "saude") {
+    try {
+      const [movRaw, folhaRaw] = await Promise.all([
+        databases.movimentos ? consultarTodosRegistosNotion(databases.movimentos, headers).catch(() => []) : Promise.resolve([]),
+        databases.folha ? consultarTodosRegistosNotion(databases.folha, headers).catch(() => []) : Promise.resolve([])
+      ]);
+
+      const movimentos = formatarListaPaginas(movRaw);
+      const salarios = formatarListaPaginas(folhaRaw);
+      const kpis = [];
+
+      if (databases.saude) {
+        try {
+          const dbTest = await fetch(`https://api.notion.com/v1/databases/${databases.saude}/query`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({})
+          });
+
+          if (dbTest.ok) {
+            const dbData = await dbTest.json();
+            extrairNumerosDePaginas(dbData.results || [], kpis);
+          } else {
+            const blocksRes = await fetch(`https://api.notion.com/v1/blocks/${databases.saude}/children`, {
+              method: "GET",
+              headers
+            });
+            if (blocksRes.ok) {
+              const blocksData = await blocksRes.json();
+              for (const block of (blocksData.results || [])) {
+                if (block.type === "child_database") {
+                  const subResults = await consultarTodosRegistosNotion(block.id, headers).catch(() => []);
+                  extrairNumerosDePaginas(subResults, kpis, block.child_database?.title);
+                } else {
+                  const conteudo = block[block.type];
+                  const texto = conteudo?.rich_text ? conteudo.rich_text.map(t => t.plain_text).join("") : "";
+                  if (texto && /\d/.test(texto) && texto.length < 90) {
+                    const partes = texto.split(":");
+                    if (partes.length >= 2) {
+                      kpis.push({ indicador: partes[0].trim(), valor: partes.slice(1).join(":").trim(), grupo: "Indicador" });
+                    } else {
+                      kpis.push({ indicador: "Métrica", valor: texto.trim(), grupo: "Indicador" });
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } catch (_) {
+          // Ignora erros na página opcional de KPIs para não bloquear o demonstrativo financeiro
+        }
+      }
+
+      return res.status(200).json({
+        mode: "saude_completa",
+        movimentos,
+        salarios,
+        kpis,
+        role
+      });
+    } catch (e) {
+      return res.status(500).json({ error: "Erro ao gerar relatórios de Saúde Financeira: " + e.message });
+    }
+  }
+
   const TARGET_ID = databases[tab];
   if (!TARGET_ID) {
     return res.status(400).json({ error: `ID da aba '${tab}' não configurado na Vercel.` });
@@ -123,7 +187,7 @@ export default async function handler(req, res) {
       const schemaData = await schemaRes.json();
 
       if (!schemaRes.ok) {
-        return res.status(schemaRes.status).json({ error: "Esta aba é um painel de indicadores e não aceita novos registos diretos." });
+        return res.status(schemaRes.status).json({ error: "Esta aba não aceita novos registos diretos." });
       }
 
       const campos = [];
@@ -275,65 +339,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // 6. SAÚDE FINANCEIRA COMPLETA
-  if (tab === "saude") {
-    try {
-      const [movRaw, folhaRaw] = await Promise.all([
-        databases.movimentos ? consultarTodosRegistosNotion(databases.movimentos, headers) : Promise.resolve([]),
-        databases.folha ? consultarTodosRegistosNotion(databases.folha, headers) : Promise.resolve([])
-      ]);
-
-      const movimentos = formatarListaPaginas(movRaw);
-      const salarios = formatarListaPaginas(folhaRaw);
-
-      const kpis = [];
-      const dbTest = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}/query`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({})
-      });
-
-      if (dbTest.ok) {
-        const dbData = await dbTest.json();
-        extrairNumerosDePaginas(dbData.results, kpis);
-      } else {
-        const blocksRes = await fetch(`https://api.notion.com/v1/blocks/${TARGET_ID}/children`, {
-          method: "GET",
-          headers
-        });
-        const blocksData = await blocksRes.json();
-
-        for (const block of (blocksData.results || [])) {
-          if (block.type === "child_database") {
-            const subResults = await consultarTodosRegistosNotion(block.id, headers);
-            extrairNumerosDePaginas(subResults, kpis, block.child_database?.title);
-          } else {
-            const conteudo = block[block.type];
-            const texto = conteudo?.rich_text ? conteudo.rich_text.map(t => t.plain_text).join("") : "";
-            if (texto && /\d/.test(texto) && texto.length < 90) {
-              const partes = texto.split(":");
-              if (partes.length >= 2) {
-                kpis.push({ indicador: partes[0].trim(), valor: partes.slice(1).join(":").trim(), grupo: "Indicador" });
-              } else {
-                kpis.push({ indicador: "Métrica", valor: texto.trim(), grupo: "Indicador" });
-              }
-            }
-          }
-        }
-      }
-
-      return res.status(200).json({
-        mode: "saude_completa",
-        movimentos,
-        salarios,
-        kpis,
-        role
-      });
-    } catch (e) {
-      return res.status(500).json({ error: "Erro ao gerar relatórios de Saúde Financeira." });
-    }
-  }
-
   // 7. LISTAR REGISTOS COM PAGINAÇÃO COMPLETA
   try {
     const todosResultados = await consultarTodosRegistosNotion(TARGET_ID, headers);
@@ -446,14 +451,14 @@ function formatarListaPaginas(results) {
         colunas.push({ nome: nomeColuna, valor: valSel, rawNum: null });
       } else if (prop.type === "number" && prop.number !== null) {
         raw[nomeColuna] = prop.number;
-        const isColValorPrincipal = /valor|montante|total|sal[aá]rio|l[ií]quido|realizado|import/i.test(nomeColuna);
+        const isColValorPrincipal = /valor|montante|total|sal[aá]rio|vencimento|l[ií]quido|realizado|import/i.test(nomeColuna);
         if (!valorPrioritarioDefinido && (isColValorPrincipal || valorNumerico === 0)) {
           valorNumerico = prop.number;
           if (isColValorPrincipal) valorPrioritarioDefinido = true;
         }
         if (!tipoFluxo) {
           if (/entrada|receita|cr[eé]dito/i.test(nomeColuna)) tipoFluxo = "entrada";
-          if (/sa[ií]da|despesa|d[eé]bito|custo|gasto|sal[aá]rio/i.test(nomeColuna)) tipoFluxo = "saida";
+          if (/sa[ií]da|despesa|d[eé]bito|custo|gasto|sal[aá]rio|vencimento/i.test(nomeColuna)) tipoFluxo = "saida";
         }
         colunas.push({
           nome: nomeColuna,
@@ -479,7 +484,7 @@ function formatarListaPaginas(results) {
         colunas.push({ nome: nomeColuna, valor: prop.checkbox ? "Sim" : "Não", rawNum: null });
       } else if (prop.type === "formula" && prop.formula) {
         const f = prop.formula;
-        if (f.number !== undefined && f.number !== null && !valorPrioritarioDefinido && /valor|total|l[ií]quido|saldo/i.test(nomeColuna)) {
+        if (f.number !== undefined && f.number !== null && !valorPrioritarioDefinido && /valor|total|l[ií]quido|saldo|vencimento/i.test(nomeColuna)) {
           valorNumerico = f.number;
           valorPrioritarioDefinido = true;
         }
@@ -498,9 +503,9 @@ function formatarListaPaginas(results) {
     if (!tipoFluxo) {
       if (valorNumerico < 0) {
         tipoFluxo = "saida";
-      } else if (/despesa|sa[ií]da|pagamento|fornecedor|imposto|iva|irc|ss|seguran[cç]a social|renda|luz|agua|[aá]gua|net|telefone|sal[aá]rio|compra|fatura fornecedor/i.test(`${titulo} ${categoria} ${status}`)) {
+      } else if (/despesa|sa[ií]da|pagamento|fornecedor|imposto|iva|irc|ss|seguran[cç]a social|renda|luz|agua|[aá]gua|net|telefone|sal[aá]rio|vencimento|compra|fatura fornecedor/i.test(`${titulo} ${categoria} ${status}`)) {
         tipoFluxo = "saida";
-      } else if (/recebid|a receber|cliente|venda|receita|entrada|fatura cliente/i.test(`${titulo} ${categoria} ${status}`)) {
+      } else if (/recebid|a receber|cliente|venda|receita|entrada|servi[cç]o|fatura cliente/i.test(`${titulo} ${categoria} ${status}`)) {
         tipoFluxo = "entrada";
       } else {
         tipoFluxo = "saida";
