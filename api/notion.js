@@ -1,18 +1,27 @@
 export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+
   const NOTION_TOKEN = process.env.NOTION_TOKEN;
+  const APP_USER = process.env.APP_USER;
   const APP_PASSWORD = process.env.APP_PASSWORD;
+  const STAFF_USER = process.env.STAFF_USER;
   const STAFF_PASSWORD = process.env.STAFF_PASSWORD;
 
-  // 1. AUTENTICAÇÃO E PERFIL
+  // 1. AUTENTICAÇÃO COM UTILIZADOR + SENHA
   let role = "admin";
   if (APP_PASSWORD || STAFF_PASSWORD) {
-    const senhaRecebida = req.headers["x-app-password"] || req.body?.password;
-    if (APP_PASSWORD && senhaRecebida === APP_PASSWORD) {
+    const userRecebido = (req.headers["x-app-user"] || req.body?.username || "").trim().toLowerCase();
+    const senhaRecebida = req.headers["x-app-password"] || req.body?.password || "";
+
+    const adminUserOk = !APP_USER || userRecebido === APP_USER.trim().toLowerCase();
+    const staffUserOk = !STAFF_USER || userRecebido === STAFF_USER.trim().toLowerCase();
+
+    if (APP_PASSWORD && senhaRecebida === APP_PASSWORD && adminUserOk) {
       role = "admin";
-    } else if (STAFF_PASSWORD && senhaRecebida === STAFF_PASSWORD) {
+    } else if (STAFF_PASSWORD && senhaRecebida === STAFF_PASSWORD && staffUserOk) {
       role = "staff";
     } else {
-      return res.status(401).json({ error: "Senha incorreta ou sessão expirada." });
+      return res.status(401).json({ error: "Utilizador ou senha incorretos." });
     }
   }
 
@@ -79,13 +88,12 @@ export default async function handler(req, res) {
     }
   }
 
-  // 3. CRIAR NOVO REGISTO (POST) — SUPORTA TAMBÉM APROVAÇÃO DE FATURAS DE E-MAIL
+  // 3. CRIAR NOVO REGISTO (POST) — INCLUI IMPORTAÇÃO DE FATURAS/FT DO E-MAIL COM PDF
   if (req.method === "POST") {
     try {
       const { valores, fromEmailInvoice } = req.body;
       let propsParaGravar = valores || {};
 
-      // Se vier da fila de revisão de faturas do e-mail, mapeia automaticamente para as colunas da tabela Movimentos
       if (fromEmailInvoice) {
         const schemaRes = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}`, { method: "GET", headers });
         const schemaData = await schemaRes.json();
@@ -95,7 +103,8 @@ export default async function handler(req, res) {
           if (colDef.type === "title") {
             mapped[colName] = fromEmailInvoice.descricao;
           } else if (colDef.type === "number" && !mapped._numSet) {
-            mapped[colName] = parseFloat(fromEmailInvoice.valor) || 0;
+            const valAbs = Math.abs(parseFloat(fromEmailInvoice.valor) || 0);
+            mapped[colName] = valAbs;
             mapped._numSet = true;
           } else if (colDef.type === "date" && !mapped._dateSet) {
             mapped[colName] = fromEmailInvoice.data || new Date().toISOString().split("T")[0];
@@ -106,11 +115,12 @@ export default async function handler(req, res) {
             mapped[colName] = match || fromEmailInvoice.estado;
           } else if ((colDef.type === "select" || colDef.type === "status") && /tipo|fluxo|natureza/i.test(colName)) {
             const opts = (colDef.status?.options || colDef.select?.options || []).map(o => o.name);
-            const alvoTipo = fromEmailInvoice.tipo === "entrada" ? /entrada|receita|crédito/i : /saída|saida|despesa|débito/i;
+            const alvoTipo = fromEmailInvoice.tipo === "entrada" ? /entrada|receita|crédito|credito/i : /saída|saida|despesa|débito|debito/i;
             const matchTipo = opts.find(o => alvoTipo.test(o));
             if (matchTipo) mapped[colName] = matchTipo;
-          } else if (colDef.type === "rich_text" && /obs|nota|origem|detalhe/i.test(colName)) {
-            mapped[colName] = `Importado do e-mail (${fromEmailInvoice.remetente || "Fatura"})`;
+          } else if (colDef.type === "rich_text" && /obs|nota|origem|detalhe|anexo|doc/i.test(colName)) {
+            const infoPdf = fromEmailInvoice.nomeArquivoPdf ? ` | Anexo PDF: ${fromEmailInvoice.nomeArquivoPdf}` : "";
+            mapped[colName] = `Importado do e-mail (${fromEmailInvoice.remetente || "FT"})${infoPdf}`;
           }
         }
         delete mapped._numSet;
@@ -158,7 +168,7 @@ export default async function handler(req, res) {
               properties[colName] = colDef.type === "status" ? { status: { name: alvo } } : { select: { name: alvo } };
               break;
             }
-          } else if (colDef.type === "checkbox" && /pag|conclu|ok/i.test(colName)) {
+          } else if (colDef.type === "checkbox" && /pag|conclu|recebid|ok/i.test(colName)) {
             properties[colName] = { checkbox: true };
             break;
           }
@@ -210,25 +220,17 @@ export default async function handler(req, res) {
     }
   }
 
-  // 6. SAÚDE FINANCEIRA COMPLETA (CRUZA MOVIMENTOS + FOLHA + INDICADORES NOTION)
+  // 6. SAÚDE FINANCEIRA COMPLETA (BUSCA TODOS OS REGISTOS PAGINADOS DO NOTION)
   if (tab === "saude") {
     try {
-      const [movRes, folhaRes] = await Promise.all([
-        databases.movimentos
-          ? fetch(`https://api.notion.com/v1/databases/${databases.movimentos}/query`, { method: "POST", headers, body: JSON.stringify({}) })
-          : Promise.resolve(null),
-        databases.folha
-          ? fetch(`https://api.notion.com/v1/databases/${databases.folha}/query`, { method: "POST", headers, body: JSON.stringify({}) })
-          : Promise.resolve(null)
+      const [movRaw, folhaRaw] = await Promise.all([
+        databases.movimentos ? consultarTodosRegistosNotion(databases.movimentos, headers) : Promise.resolve([]),
+        databases.folha ? consultarTodosRegistosNotion(databases.folha, headers) : Promise.resolve([])
       ]);
 
-      const movData = movRes && movRes.ok ? await movRes.json() : { results: [] };
-      const folhaData = folhaRes && folhaRes.ok ? await folhaRes.json() : { results: [] };
+      const movimentos = formatarListaPaginas(movRaw);
+      const salarios = formatarListaPaginas(folhaRaw);
 
-      const movimentos = formatarListaPaginas(movData.results || []);
-      const salarios = formatarListaPaginas(folhaData.results || []);
-
-      // Extrair também KPIs configurados na página/tabela Saúde Financeira
       const kpis = [];
       const dbTest = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}/query`, {
         method: "POST",
@@ -248,15 +250,8 @@ export default async function handler(req, res) {
 
         for (const block of (blocksData.results || [])) {
           if (block.type === "child_database") {
-            const subDbRes = await fetch(`https://api.notion.com/v1/databases/${block.id}/query`, {
-              method: "POST",
-              headers,
-              body: JSON.stringify({})
-            });
-            if (subDbRes.ok) {
-              const subDbData = await subDbRes.json();
-              extrairNumerosDePaginas(subDbData.results, kpis, block.child_database?.title);
-            }
+            const subResults = await consultarTodosRegistosNotion(block.id, headers);
+            extrairNumerosDePaginas(subResults, kpis, block.child_database?.title);
           } else {
             const conteudo = block[block.type];
             const texto = conteudo?.rich_text ? conteudo.rich_text.map(t => t.plain_text).join("") : "";
@@ -284,24 +279,41 @@ export default async function handler(req, res) {
     }
   }
 
-  // 7. LISTAR REGISTOS NORMAIS (MOVIMENTOS, FOLHA, ORÇAMENTOS)
+  // 7. LISTAR TODOS OS REGISTOS DA TABELA (COM PAGINAÇÃO COMPLETA PARA NÃO CORTAR SALÁRIOS/MOVIMENTOS)
   try {
-    const response = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}/query`, {
+    const todosResultados = await consultarTodosRegistosNotion(TARGET_ID, headers);
+    const itensFormatados = formatarListaPaginas(todosResultados);
+    res.status(200).json({ mode: "list", items: itensFormatados, role });
+  } catch (error) {
+    res.status(500).json({ error: error.message || "Falha ao conectar com o Notion." });
+  }
+}
+
+// Busca todas as páginas do Notion (ultrapassa o limite de 100 por página)
+async function consultarTodosRegistosNotion(databaseId, headers) {
+  let allResults = [];
+  let hasMore = true;
+  let startCursor = undefined;
+
+  while (hasMore) {
+    const body = startCursor ? { start_cursor: startCursor, page_size: 100 } : { page_size: 100 };
+    const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
       method: "POST",
       headers,
-      body: JSON.stringify({})
+      body: JSON.stringify(body)
     });
 
     const data = await response.json();
     if (!response.ok) {
-      return res.status(response.status).json({ error: data.message || "Erro na API do Notion" });
+      throw new Error(data.message || "Erro na API do Notion");
     }
 
-    const itensFormatados = formatarListaPaginas(data.results || []);
-    res.status(200).json({ mode: "list", items: itensFormatados, role });
-  } catch (error) {
-    res.status(500).json({ error: "Falha ao conectar com o Notion." });
+    allResults = allResults.concat(data.results || []);
+    hasMore = Boolean(data.has_more);
+    startCursor = data.next_cursor;
   }
+
+  return allResults;
 }
 
 function formatarListaPaginas(results) {
@@ -312,6 +324,7 @@ function formatarListaPaginas(results) {
     let dataIso = page.created_time ? page.created_time.slice(0, 10) : "";
     let dataExplicit = false;
     let valorNumerico = 0;
+    let valorPrioritarioDefinido = false;
     let tipoFluxo = "";
     let isPaidFlag = false;
     const colunas = [];
@@ -327,20 +340,29 @@ function formatarListaPaginas(results) {
       } else if (prop.type === "select" && prop.select) {
         const valSel = prop.select.name;
         raw[nomeColuna] = valSel;
-        if (/tipo|fluxo|natureza|movimento/i.test(nomeColuna)) {
-          if (/entrada|receita|crédito|credito|ganho/i.test(valSel)) tipoFluxo = "entrada";
-          if (/saída|saida|despesa|débito|debito|custo|gasto/i.test(valSel)) tipoFluxo = "saida";
+
+        // Deteta se é Entrada ou Saída pelo nome da coluna ou pelo valor selecionado
+        if (/tipo|fluxo|natureza|movimento|opera/i.test(nomeColuna) || /^(entrada|sa[ií]da|receita|despesa|cr[eé]dito|d[eé]bito)$/i.test(valSel.trim())) {
+          if (/entrada|receita|cr[eé]dito|ganho|venda/i.test(valSel)) tipoFluxo = "entrada";
+          if (/sa[ií]da|despesa|d[eé]bito|custo|gasto|pagamento|compra|imposto|sal[aá]rio/i.test(valSel)) tipoFluxo = "saida";
         }
+
         if (/cat|grupo|centro|cargo|funç|func|depart/i.test(nomeColuna)) {
           categoria = valSel;
-        } else if (!status) {
+        } else if (!status && !/tipo|fluxo|natureza/i.test(nomeColuna)) {
           status = valSel;
         }
         colunas.push({ nome: nomeColuna, valor: valSel, rawNum: null });
       } else if (prop.type === "number" && prop.number !== null) {
         raw[nomeColuna] = prop.number;
-        if (valorNumerico === 0 || /valor|montante|total|salário|salario|líquido|liquido|realizado/i.test(nomeColuna)) {
+        const isColValorPrincipal = /valor|montante|total|sal[aá]rio|l[ií]quido|realizado|import/i.test(nomeColuna);
+        if (!valorPrioritarioDefinido && (isColValorPrincipal || valorNumerico === 0)) {
           valorNumerico = prop.number;
+          if (isColValorPrincipal) valorPrioritarioDefinido = true;
+        }
+        if (!tipoFluxo) {
+          if (/entrada|receita|cr[eé]dito/i.test(nomeColuna)) tipoFluxo = "entrada";
+          if (/sa[ií]da|despesa|d[eé]bito|custo|gasto|sal[aá]rio/i.test(nomeColuna)) tipoFluxo = "saida";
         }
         colunas.push({
           nome: nomeColuna,
@@ -366,6 +388,10 @@ function formatarListaPaginas(results) {
         colunas.push({ nome: nomeColuna, valor: prop.checkbox ? "Sim" : "Não", rawNum: null });
       } else if (prop.type === "formula" && prop.formula) {
         const f = prop.formula;
+        if (f.number !== undefined && f.number !== null && !valorPrioritarioDefinido && /valor|total|l[ií]quido|saldo/i.test(nomeColuna)) {
+          valorNumerico = f.number;
+          valorPrioritarioDefinido = true;
+        }
         const val = f.number !== undefined && f.number !== null
           ? f.number.toLocaleString("pt-PT", { minimumFractionDigits: 2 })
           : (f.string || (f.boolean !== undefined ? (f.boolean ? "Sim" : "Não") : ""));
@@ -378,20 +404,29 @@ function formatarListaPaginas(results) {
       }
     }
 
+    // Fallback inteligente para Entrada vs Saída se não houver coluna explícita de Tipo
     if (!tipoFluxo) {
-      tipoFluxo = valorNumerico < 0 ? "saida" : "entrada";
+      if (valorNumerico < 0) {
+        tipoFluxo = "saida";
+      } else if (/despesa|sa[ií]da|pagamento|fornecedor|imposto|iva|irc|ss|seguran[cç]a social|renda|luz|agua|[aá]gua|net|telefone|sal[aá]rio|compra|fatura fornecedor/i.test(`${titulo} ${categoria} ${status}`)) {
+        tipoFluxo = "saida";
+      } else if (/recebid|a receber|cliente|venda|receita|entrada|fatura cliente/i.test(`${titulo} ${categoria} ${status}`)) {
+        tipoFluxo = "entrada";
+      } else {
+        tipoFluxo = "saida"; // Por segurança contabilística, despesas sem sinal explícito não inflam entradas
+      }
     }
 
-    const isSettled = isPaidFlag || /pag|conclu|recebid|liquid|done/i.test(status || "");
+    const isSettled = isPaidFlag || /pag[oa]|conclu[ií]d|recebid[oa]|liquid|done|efetuad/i.test(status || "");
 
     return {
       id: page.id,
       titulo,
-      status: status || (isSettled ? "Pago" : "Pendente"),
+      status: status || (isSettled ? (tipoFluxo === "entrada" ? "Recebido" : "Pago") : "Pendente"),
       isSettled,
       categoria: categoria || "Geral",
       dataIso,
-      valorNumerico,
+      valorNumerico: Math.abs(valorNumerico),
       tipoFluxo,
       colunas,
       raw
