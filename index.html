@@ -9,9 +9,9 @@
   <style>
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; background: #f2f2f7; margin: 0; padding: 20px 16px; color: #1c1c1e; }
-    .container { max-width: 920px; margin: 0 auto; }
+    .container { max-width: 940px; margin: 0 auto; }
 
-    /* Ecrã de Login */
+    /* Login */
     .login-screen { max-width: 380px; margin: 70px auto; background: white; padding: 28px 24px; border-radius: 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); text-align: center; }
     .login-icon { width: 48px; height: 48px; background: #eef6ff; color: #0071e3; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px; font-weight: 700; }
     .login-screen h2 { margin: 0 0 6px 0; font-size: 20px; }
@@ -19,95 +19,111 @@
     .login-input { width: 100%; padding: 12px 14px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 16px; margin-bottom: 12px; background: #fafafa; }
     .login-input:focus { outline: none; border-color: #0071e3; background: white; }
     .login-btn { width: 100%; background: #0071e3; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 600; font-size: 15px; cursor: pointer; }
-    .login-btn:disabled { opacity: 0.6; }
 
-    /* Cabeçalho e Navegação */
+    /* Cabeçalho */
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap; }
     .brand h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
     .brand span { font-size: 12px; color: #6e6e73; }
     .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .btn-new { background: #1c1c1e; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; }
-    .btn-new:hover { opacity: 0.85; }
     .btn-sec { background: white; color: #1c1c1e; border: 1px solid #d1d1d6; padding: 9px 12px; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; }
     .btn-sec:hover { background: #f8f8fa; }
     .btn-logout { background: white; color: #6e6e73; border: 1px solid #d1d1d6; padding: 9px 12px; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; }
-    .btn-logout:hover { color: #d93025; border-color: #f5c2c7; }
 
     .tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
     .tab { background: #e5e5ea; color: #3a3a3c; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap; }
     .tab.active { background: #0071e3; color: white; box-shadow: 0 2px 8px rgba(0,113,227,0.25); }
 
-    /* Alerta de Vencimentos */
-    .alert-banner { background: #fff8e6; border: 1px solid #ffe082; color: #8a5a00; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .alert-banner button { background: #8a5a00; color: white; border: none; padding: 5px 10px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    /* Fila de Faturas do E-mail (Ciclo 10 dias) */
+    .email-queue { background: #eef6ff; border: 1px solid #b8daff; border-radius: 14px; padding: 16px; margin-bottom: 18px; }
+    .email-queue-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
+    .email-queue-head h3 { margin: 0; font-size: 15px; color: #004085; }
+    .invoice-item { background: white; border-radius: 10px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; border: 1px solid #d6e9ff; }
+    .invoice-meta strong { display: block; font-size: 14px; color: #1c1c1e; }
+    .invoice-meta span { font-size: 12px; color: #6e6e73; }
+    .invoice-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-inv-paid { background: #188038; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-inv-rec { background: #0071e3; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-inv-pend { background: #f29900; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-inv-ign { background: #e5e5ea; color: #3a3a3c; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+    /* Sub-abas (Salários: Por Pagar / Pagos / Todos e Saúde: Mensal / Trimestral / Anual) */
+    .sub-tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+    .sub-tab { background: white; color: #3a3a3c; border: 1px solid #d1d1d6; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .sub-tab.active { background: #1c1c1e; color: white; border-color: #1c1c1e; }
 
     /* Resumo Executivo */
-    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 12px; margin-bottom: 16px; }
     .summary-card { background: white; padding: 14px 16px; border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
     .summary-card span { font-size: 11px; font-weight: 700; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 4px; }
     .summary-card strong { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
     .val-in { color: #188038; }
     .val-out { color: #d93025; }
     .val-net { color: #0071e3; }
+    .val-warn { color: #d97706; }
 
-    /* Painel de Gráficos */
-    .charts-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    /* Gráficos e Pílulas de Categoria Clicáveis */
+    .charts-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px; margin-bottom: 16px; }
     .chart-box { background: white; padding: 16px; border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-    .chart-box h3 { margin: 0 0 10px 0; font-size: 13px; color: #6e6e73; text-transform: uppercase; letter-spacing: 0.3px; }
-    .chart-canvas-holder { position: relative; height: 210px; width: 100%; }
+    .chart-box h3 { margin: 0 0 8px 0; font-size: 12px; color: #6e6e73; text-transform: uppercase; letter-spacing: 0.3px; }
+    .chart-canvas-holder { position: relative; height: 200px; width: 100%; }
+    .cat-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .cat-pill { background: #f2f2f7; border: 1px solid #e5e5ea; color: #1c1c1e; padding: 5px 10px; border-radius: 14px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .cat-pill.active, .cat-pill:hover { background: #0071e3; color: white; border-color: #0071e3; }
 
     /* Barra de Filtros */
-    .filters-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filters-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
     .filters-bar input, .filters-bar select { padding: 9px 12px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 13px; background: white; color: #1c1c1e; }
     .filters-bar input { flex: 1; min-width: 180px; }
 
-    /* Cartões de Registos */
+    /* Gaveta Recolhível de Pagos / Recebidos */
+    .settled-drawer-btn { width: 100%; background: white; border: 1px solid #d1d1d6; color: #1c1c1e; padding: 13px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-top: 16px; margin-bottom: 12px; }
+    .settled-drawer-btn:hover { background: #f8f8fa; }
+
+    /* Cartões */
     .card { background: white; padding: 16px 18px; border-radius: 14px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.03); }
     .card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-    .card-title { font-size: 16px; font-weight: 600; color: #1c1c1e; }
+    .card-title { font-size: 16px; font-weight: 600; color: #1c1c1e; cursor: pointer; }
+    .card-title:hover { color: #0071e3; }
     .badge { background: #eef6ff; color: #0071e3; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; white-space: nowrap; }
     .badge.pending { background: #fff3cd; color: #856404; }
     .badge.paid { background: #e6f4ea; color: #188038; }
-
-    /* Barra de Progresso de Orçamento */
-    .budget-bar-wrap { margin: 10px 0 4px 0; }
-    .budget-bar-info { display: flex; justify-content: space-between; font-size: 11px; color: #6e6e73; margin-bottom: 4px; font-weight: 600; }
-    .budget-track { width: 100%; height: 8px; background: #e5e5ea; border-radius: 6px; overflow: hidden; }
-    .budget-fill { height: 100%; background: #188038; border-radius: 6px; transition: width 0.3s; }
-    .budget-fill.warn { background: #f29900; }
-    .budget-fill.over { background: #d93025; }
 
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; border-top: 1px solid #f2f2f7; padding-top: 12px; }
     .prop-label { color: #8e8e93; font-size: 11px; font-weight: 600; display: block; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
     .prop-val { font-weight: 600; font-size: 14px; color: #1c1c1e; }
 
-    /* Ações Rápidas no Cartão */
     .card-actions { display: flex; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed #ececef; flex-wrap: wrap; }
     .btn-mini { background: #f2f2f7; color: #3a3a3c; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
-    .btn-mini:hover { background: #e5e5ea; }
     .btn-mini.pay { background: #e6f4ea; color: #188038; }
-    .btn-mini.pay:hover { background: #ceead6; }
     .btn-mini.del { background: #fce8e6; color: #d93025; margin-left: auto; }
-    .btn-mini.del:hover { background: #fad2cf; }
 
-    /* Grelha de KPIs Numéricos */
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    /* Barra Orçamento */
+    .budget-bar-wrap { margin: 10px 0 4px 0; }
+    .budget-bar-info { display: flex; justify-content: space-between; font-size: 11px; color: #6e6e73; margin-bottom: 4px; font-weight: 600; }
+    .budget-track { width: 100%; height: 8px; background: #e5e5ea; border-radius: 6px; overflow: hidden; }
+    .budget-fill { height: 100%; background: #188038; border-radius: 6px; }
+    .budget-fill.warn { background: #f29900; }
+    .budget-fill.over { background: #d93025; }
+
+    /* KPIs Saúde Financeira */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 14px; }
     .kpi-card { background: white; padding: 18px; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 4px solid #0071e3; }
     .kpi-label { font-size: 12px; font-weight: 600; color: #6e6e73; text-transform: uppercase; display: block; margin-bottom: 6px; }
     .kpi-value { font-size: 24px; font-weight: 700; color: #1c1c1e; letter-spacing: -0.5px; }
 
-    .erro { color: #d93025; background: #fce8e6; padding: 12px; border-radius: 10px; margin-bottom: 12px; font-size: 13px; text-align: left; }
+    .section-label { font-size: 13px; font-weight: 700; color: #6e6e73; text-transform: uppercase; letter-spacing: 0.4px; margin: 14px 0 10px 0; }
+    .erro { color: #d93025; background: #fce8e6; padding: 12px; border-radius: 10px; margin-bottom: 12px; font-size: 13px; }
 
-    /* Modal Dinâmico */
+    /* Modais */
     .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); align-items: center; justify-content: center; padding: 16px; z-index: 100; }
     .modal-bg.open { display: flex; }
-    .modal { background: white; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; border-radius: 18px; padding: 22px; box-shadow: 0 12px 35px rgba(0,0,0,0.22); }
+    .modal { background: white; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 18px; padding: 22px; box-shadow: 0 12px 35px rgba(0,0,0,0.22); }
     .modal h2 { margin: 0 0 4px 0; font-size: 19px; }
     .modal-sub { font-size: 13px; color: #6e6e73; margin-bottom: 18px; display: block; }
     .field { margin-bottom: 14px; }
     .field label { display: block; font-size: 12px; font-weight: 600; color: #3a3a3c; margin-bottom: 5px; }
     .field input, .field select { width: 100%; padding: 10px 12px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 15px; font-family: inherit; background: #fafafa; }
-    .field input:focus, .field select:focus { outline: none; border-color: #0071e3; background: white; }
     .select-row { display: flex; gap: 6px; }
     .select-row select { flex: 1; }
     .btn-add-cat { background: #eef6ff; color: #0071e3; border: 1px solid #cce3ff; border-radius: 10px; padding: 0 12px; font-weight: 600; font-size: 13px; cursor: pointer; white-space: nowrap; }
@@ -116,7 +132,6 @@
     .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid #f2f2f7; padding-top: 16px; }
     .btn-cancel { background: #e5e5ea; color: #1c1c1e; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; }
     .btn-save { background: #0071e3; color: white; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; }
-    .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -140,58 +155,84 @@
         <span>Sincronizado em tempo real com Notion</span>
       </div>
       <div class="header-actions">
-        <button class="btn-sec" id="btnChartsToggle" onclick="alternarGraficos()">📊 Gráficos</button>
+        <button class="btn-sec" id="btnScanEmail" onclick="verificarFaturasEmail(true)">📧 Faturas E-mail</button>
         <button class="btn-sec" id="btnExport" onclick="exportarCSV()">📥 CSV</button>
         <button class="btn-new" id="btnNovo" onclick="abrirFormulario()">+ Novo Movimento</button>
         <button class="btn-logout" onclick="terminarSessao()">Sair</button>
       </div>
     </header>
 
-    <div class="tabs" id="tabsBar">
+    <div class="tabs">
       <button class="tab active" id="tab-movimentos" onclick="mudarAba('movimentos', this)">Movimentos</button>
       <button class="tab" id="tab-folha" onclick="mudarAba('folha', this)">Folha Salarial</button>
       <button class="tab" id="tab-orcamentos" onclick="mudarAba('orcamentos', this)">Orçamentos</button>
       <button class="tab" id="tab-saude" onclick="mudarAba('saude', this)">Saúde Financeira</button>
     </div>
 
-    <!-- Alerta de Pendentes / Vencimentos -->
-    <div id="alertaVencimentos" class="alert-banner" style="display:none;">
-      <span id="textoAlerta"></span>
-      <button onclick="filtrarPendentes()">Ver pendentes</button>
+    <!-- Fila de Revisão de Faturas do E-mail (Ciclo 10 dias) -->
+    <div id="filaFaturasEmail" class="email-queue" style="display:none;">
+      <div class="email-queue-head">
+        <h3 id="tituloFilaEmail">📧 Faturas detetadas nos últimos 10 dias — Confirme o estado:</h3>
+        <button class="btn-inv-ign" onclick="document.getElementById('filaFaturasEmail').style.display='none'">Fechar aviso</button>
+      </div>
+      <div id="listaFaturasEmail"></div>
     </div>
 
-    <!-- Cartões de Resumo -->
+    <!-- Sub-abas de Folha Salarial (Por Pagar / Pagos / Todos) -->
+    <div id="subTabsFolha" class="sub-tabs" style="display:none;">
+      <button class="sub-tab active" id="sub-folha-pendentes" onclick="mudarFiltroFolha('pendentes', this)">⏳ Por Pagar (Mês)</button>
+      <button class="sub-tab" id="sub-folha-pagos" onclick="mudarFiltroFolha('pagos', this)">✅ Pagos (Mês)</button>
+      <button class="sub-tab" id="sub-folha-todos" onclick="mudarFiltroFolha('todos', this)">📋 Todos do Mês</button>
+      <input type="month" id="mesFolhaInput" style="padding:6px 10px; border-radius:10px; border:1px solid #d1d1d6; font-size:13px;" onchange="aplicarFiltros()">
+    </div>
+
+    <!-- Sub-abas de Saúde Financeira (Mensal / Trimestral / Anual) -->
+    <div id="subTabsSaude" class="sub-tabs" style="display:none;">
+      <button class="sub-tab active" id="sub-saude-mensal" onclick="mudarPeriodoSaude('mensal', this)">📅 Relatório Mensal</button>
+      <button class="sub-tab" id="sub-saude-trimestral" onclick="mudarPeriodoSaude('trimestral', this)">📊 Relatório Trimestral</button>
+      <button class="sub-tab" id="sub-saude-anual" onclick="mudarPeriodoSaude('anual', this)">🏛️ Relatório Anual</button>
+    </div>
+
+    <!-- Resumo Executivo -->
     <div id="resumoExecutivo" class="summary-grid" style="display:none;">
-      <div class="summary-card"><span>Entradas / Créditos</span><strong id="sumIn" class="val-in">0,00 €</strong></div>
-      <div class="summary-card"><span>Saídas / Custos</span><strong id="sumOut" class="val-out">0,00 €</strong></div>
-      <div class="summary-card"><span>Saldo Líquido</span><strong id="sumNet" class="val-net">0,00 €</strong></div>
-      <div class="summary-card"><span>Registos Filtrados</span><strong id="sumCount">0</strong></div>
+      <div class="summary-card"><span id="lblSum1">Entradas Realizadas</span><strong id="sumIn" class="val-in">0,00 €</strong></div>
+      <div class="summary-card"><span id="lblSum2">Saídas Realizadas</span><strong id="sumOut" class="val-out">0,00 €</strong></div>
+      <div class="summary-card"><span id="lblSum3">Pendentes (Aberto)</span><strong id="sumPend" class="val-warn">0,00 €</strong></div>
+      <div class="summary-card"><span id="lblSum4">Previsão Atualizada</span><strong id="sumNet" class="val-net">0,00 €</strong></div>
     </div>
 
-    <!-- Gráficos -->
+    <!-- Gráficos e Categorias Clicáveis -->
     <div id="painelGraficos" class="charts-wrap" style="display:none;">
       <div class="chart-box">
-        <h3>Distribuição por Categoria</h3>
+        <h3>Distribuição por Categoria (Clique para detalhar)</h3>
         <div class="chart-canvas-holder"><canvas id="chartCategorias"></canvas></div>
+        <div id="pilsCategorias" class="cat-pills"></div>
       </div>
       <div class="chart-box">
-        <h3>Resumo por Estado / Situação</h3>
+        <h3 id="tituloGrafico2">Comparativo Financeiro</h3>
         <div class="chart-canvas-holder"><canvas id="chartEstados"></canvas></div>
       </div>
     </div>
 
-    <!-- Barra de Pesquisa e Filtros -->
+    <!-- Barra de Pesquisa -->
     <div id="barraFiltros" class="filters-bar" style="display:none;">
-      <input type="text" id="filtroTexto" placeholder="Pesquisar por descrição, valor ou detalhe..." oninput="aplicarFiltros()">
-      <select id="filtroEstado" onchange="aplicarFiltros()">
-        <option value="">Todos os estados</option>
-      </select>
-      <select id="filtroMes" onchange="aplicarFiltros()">
-        <option value="">Todos os meses</option>
+      <input type="text" id="filtroTexto" placeholder="Pesquisar por descrição, colaborador, categoria ou valor..." oninput="aplicarFiltros()">
+      <select id="filtroCategoriaSelect" onchange="aplicarFiltros()">
+        <option value="">Todas as categorias</option>
       </select>
     </div>
 
+    <!-- Área Principal de Conteúdo -->
     <div id="lista">Carregando...</div>
+
+    <!-- Gaveta Recolhível de Pagos / Recebidos (Movimentos) -->
+    <div id="secaoLiquidados" style="display:none;">
+      <button class="settled-drawer-btn" onclick="alternarGavetaLiquidados()">
+        <span id="textoGavetaLiquidados">📁 Ver Pagos e Recebidos (0)</span>
+        <span id="setaGaveta">▼ Abrir</span>
+      </button>
+      <div id="listaLiquidados" style="display:none;"></div>
+    </div>
   </div>
 
   <!-- Modal Dinâmico (Criar / Editar / Duplicar) -->
@@ -210,13 +251,31 @@
     </div>
   </div>
 
+  <!-- Modal de Detalhes (Categoria ou Colaborador) -->
+  <div class="modal-bg" id="modalDetalhes">
+    <div class="modal">
+      <h2 id="detalheTitulo">Detalhes</h2>
+      <span class="modal-sub" id="detalheSubtitulo"></span>
+      <div id="detalheConteudo"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-save" onclick="document.getElementById('modalDetalhes').classList.remove('open')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let abaAtual = "movimentos";
     let intervaloSync = null;
     let itensBrutos = [];
-    let itensFiltrados = [];
+    let itensVisiveisExport = [];
     let editandoPageId = null;
-    let mostrarGraficos = true;
+
+    // Estados específicos de visualização
+    let gavetaAberta = false;
+    let filtroFolhaAtual = "pendentes"; // "pendentes" | "pagos" | "todos"
+    let periodoSaudeAtual = "mensal";   // "mensal" | "trimestral" | "anual"
+    let dadosSaudeCache = null;
+
     let chartCatInstance = null;
     let chartEstInstance = null;
 
@@ -230,8 +289,7 @@
     function obterSenha() { return localStorage.getItem("portal_financeiro_pass") || ""; }
 
     function aplicarPermissoes(role) {
-      const restritas = ["tab-folha", "tab-orcamentos", "tab-saude"];
-      restritas.forEach(id => {
+      ["tab-folha", "tab-orcamentos", "tab-saude"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = role === "staff" ? "none" : "inline-block";
       });
@@ -253,8 +311,11 @@
     function mostrarApp(role = "admin") {
       document.getElementById("loginBox").style.display = "none";
       document.getElementById("appBox").style.display = "block";
+      document.getElementById("mesFolhaInput").value = new Date().toISOString().slice(0, 7);
       aplicarPermissoes(role);
       carregarDados();
+      verificarCiclo10DiasEmail();
+
       if (intervaloSync) clearInterval(intervaloSync);
       intervaloSync = setInterval(() => {
         if (!document.getElementById("modalNovo").classList.contains("open")) {
@@ -268,7 +329,6 @@
       const senha = document.getElementById("inputSenha").value;
       const btn = document.getElementById("btnEntrar");
       const erroEl = document.getElementById("erroLogin");
-
       btn.disabled = true;
       btn.textContent = "A verificar...";
       erroEl.style.display = "none";
@@ -298,13 +358,123 @@
       mostrarLogin();
     }
 
-    function alternarGraficos() {
-      mostrarGraficos = !mostrarGraficos;
-      document.getElementById("painelGraficos").style.display = (mostrarGraficos && abaAtual !== "saude") ? "grid" : "none";
+    // --- AUTOMAÇÃO DE FATURAS NO E-MAIL (CICLO DE 10 DIAS) ---
+    function verificarCiclo10DiasEmail() {
+      const ultimaVerif = parseInt(localStorage.getItem("ultimo_scan_email_ts") || "0", 10);
+      const dezDiasMs = 10 * 24 * 60 * 60 * 1000;
+      if (Date.now() - ultimaVerif >= dezDiasMs) {
+        verificarFaturasEmail(false);
+      }
     }
 
+    async function verificarFaturasEmail(manual = false) {
+      const btn = document.getElementById("btnScanEmail");
+      if (manual) {
+        btn.disabled = true;
+        btn.textContent = "⏳ A ler e-mail...";
+      }
+
+      try {
+        const res = await fetch("/api/scan-emails", {
+          headers: { "x-app-password": obterSenha() }
+        });
+        const data = await res.json();
+        localStorage.setItem("ultimo_scan_email_ts", String(Date.now()));
+
+        if (!data.configured) {
+          if (manual) alert(data.message);
+          return;
+        }
+
+        const processadas = JSON.parse(localStorage.getItem("faturas_email_processadas") || "[]");
+        const novasFaturas = (data.faturas || []).filter(f => !processadas.includes(f.uid));
+
+        if (novasFaturas.length === 0) {
+          if (manual) alert("Nenhuma fatura nova encontrada nos últimos 10 dias.");
+          return;
+        }
+
+        renderizarFilaFaturas(novasFaturas);
+      } catch (e) {
+        if (manual) alert("Não foi possível verificar o e-mail neste momento.");
+      } finally {
+        if (manual) {
+          btn.disabled = false;
+          btn.textContent = "📧 Faturas E-mail";
+        }
+      }
+    }
+
+    function renderizarFilaFaturas(faturas) {
+      const box = document.getElementById("filaFaturasEmail");
+      const lista = document.getElementById("listaFaturasEmail");
+      box.style.display = "block";
+
+      lista.innerHTML = faturas.map((f, idx) => `
+        <div class="invoice-item" id="inv_row_${f.uid}">
+          <div class="invoice-meta">
+            <strong>${f.descricao} — ${Number(f.valor || 0).toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</strong>
+            <span>De: ${f.remetente} · Data: ${f.data}</span>
+          </div>
+          <div class="invoice-btns">
+            <button class="btn-inv-paid" onclick='confirmarFaturaEmail(${JSON.stringify(f)}, "Pago", "saida")'>✓ Foi Paga</button>
+            <button class="btn-inv-rec" onclick='confirmarFaturaEmail(${JSON.stringify(f)}, "Recebido", "entrada")'>✓ Foi Recebida</button>
+            <button class="btn-inv-pend" onclick='confirmarFaturaEmail(${JSON.stringify(f)}, "Pendente", "saida")'>⏳ Pendente</button>
+            <button class="btn-inv-ign" onclick="ignorarFaturaEmail('${f.uid}')">Ignorar</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function confirmarFaturaEmail(fatura, estado, tipo) {
+      try {
+        const res = await fetch("/api/notion?tab=movimentos", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-app-password": obterSenha()
+          },
+          body: JSON.stringify({
+            fromEmailInvoice: {
+              descricao: fatura.descricao,
+              valor: fatura.valor,
+              data: fatura.data,
+              remetente: fatura.remetente,
+              estado,
+              tipo
+            }
+          })
+        });
+
+        if (res.ok) {
+          ignorarFaturaEmail(fatura.uid);
+          if (abaAtual === "movimentos") carregarDados();
+        } else {
+          const err = await res.json();
+          alert(err.error || "Erro ao gravar fatura nos Movimentos.");
+        }
+      } catch (e) {
+        alert("Erro de rede ao registar fatura.");
+      }
+    }
+
+    function ignorarFaturaEmail(uid) {
+      const processadas = JSON.parse(localStorage.getItem("faturas_email_processadas") || "[]");
+      if (!processadas.includes(uid)) {
+        processadas.push(uid);
+        localStorage.setItem("faturas_email_processadas", JSON.stringify(processadas));
+      }
+      const row = document.getElementById(`inv_row_${uid}`);
+      if (row) row.remove();
+      if (document.getElementById("listaFaturasEmail").children.length === 0) {
+        document.getElementById("filaFaturasEmail").style.display = "none";
+      }
+    }
+
+    // --- NAVEGAÇÃO DE ABAS E SUB-ABAS ---
     function mudarAba(novaAba, botao) {
       abaAtual = novaAba;
+      gavetaAberta = false;
       document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
       botao.classList.add("active");
 
@@ -317,11 +487,71 @@
       }
 
       document.getElementById("filtroTexto").value = "";
-      document.getElementById("filtroEstado").value = "";
-      document.getElementById("filtroMes").value = "";
+      document.getElementById("filtroCategoriaSelect").value = "";
       carregarDados();
     }
 
+    function mudarFiltroFolha(filtro, btn) {
+      filtroFolhaAtual = filtro;
+      document.querySelectorAll("#subTabsFolha .sub-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      aplicarFiltros();
+    }
+
+    function mudarPeriodoSaude(periodo, btn) {
+      periodoSaudeAtual = periodo;
+      document.querySelectorAll("#subTabsSaude .sub-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      if (dadosSaudeCache) renderizarSaudeFinanceira(dadosSaudeCache);
+    }
+
+    function alternarGavetaLiquidados() {
+      gavetaAberta = !gavetaAberta;
+      document.getElementById("listaLiquidados").style.display = gavetaAberta ? "block" : "none";
+      document.getElementById("setaGaveta").textContent = gavetaAberta ? "▲ Fechar" : "▼ Abrir";
+    }
+
+    // --- DETALHES INTERATIVOS AO CLICAR NA CATEGORIA OU COLABORADOR ---
+    function abrirDetalhesCategoria(categoria) {
+      const itensCat = itensBrutos.filter(i => i.categoria === categoria);
+      const total = itensCat.reduce((acc, i) => acc + Math.abs(i.valorNumerico || 0), 0);
+
+      document.getElementById("detalheTitulo").textContent = `Categoria: ${categoria}`;
+      document.getElementById("detalheSubtitulo").textContent = `${itensCat.length} lançamento(s) · Total acumulado: ${total.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €`;
+
+      document.getElementById("detalheConteudo").innerHTML = itensCat.map(item => `
+        <div class="card" style="background:#f9f9fb; margin-bottom:8px;">
+          <div class="card-top">
+            <span class="card-title">${item.titulo}</span>
+            <span class="badge ${item.isSettled ? "paid" : "pending"}">${item.status}</span>
+          </div>
+          <div class="grid">
+            ${item.colunas.map(c => `<div><span class="prop-label">${c.nome}</span><span class="prop-val">${c.valor}</span></div>`).join("")}
+          </div>
+        </div>
+      `).join("");
+
+      document.getElementById("modalDetalhes").classList.add("open");
+    }
+
+    function abrirDetalhesColaborador(item) {
+      document.getElementById("detalheTitulo").textContent = `Colaborador: ${item.titulo}`;
+      document.getElementById("detalheSubtitulo").textContent = `Estado atual: ${item.status} · Referência: ${item.dataIso || "Mês corrente"}`;
+
+      document.getElementById("detalheConteudo").innerHTML = `
+        <div class="grid" style="border-top:none; padding-top:4px;">
+          ${item.colunas.map(c => `
+            <div style="background:#f9f9fb; padding:10px; border-radius:10px;">
+              <span class="prop-label">${c.nome}</span>
+              <span class="prop-val">${c.valor}</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+      document.getElementById("modalDetalhes").classList.add("open");
+    }
+
+    // --- CRUD DINÂMICO (CRIAR / EDITAR / DUPLICAR / PAGAR / APAGAR) ---
     async function abrirFormulario(itemExistente = null, isDuplicate = false) {
       const modal = document.getElementById("modalNovo");
       const container = document.getElementById("camposDinamicos");
@@ -455,10 +685,7 @@
       try {
         const res = await fetch(`/api/notion?tab=${abaAtual}`, {
           method: metodo,
-          headers: {
-            "Content-Type": "application/json",
-            "x-app-password": obterSenha()
-          },
+          headers: { "Content-Type": "application/json", "x-app-password": obterSenha() },
           body: JSON.stringify(payload)
         });
         if (res.status === 401) { fecharFormulario(); terminarSessao(); return; }
@@ -484,18 +711,12 @@
       try {
         const res = await fetch(`/api/notion?tab=${abaAtual}`, {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "x-app-password": obterSenha()
-          },
+          headers: { "Content-Type": "application/json", "x-app-password": obterSenha() },
           body: JSON.stringify({ pageId, quickPaid: true })
         });
         const data = await res.json();
-        if (!res.ok) {
-          alert(data.error || "Não foi possível atualizar o estado.");
-        } else {
-          carregarDados();
-        }
+        if (!res.ok) alert(data.error || "Não foi possível atualizar o estado.");
+        else carregarDados();
       } catch (e) {
         alert("Erro de rede ao atualizar registo.");
       }
@@ -508,91 +729,180 @@
           method: "DELETE",
           headers: { "x-app-password": obterSenha() }
         });
-        if (res.ok) {
-          carregarDados();
-        } else {
-          const data = await res.json();
-          alert(data.error || "Erro ao remover registo.");
-        }
+        if (res.ok) carregarDados();
       } catch (e) {
         alert("Erro de rede ao remover registo.");
       }
     }
 
-    function filtrarPendentes() {
-      const sel = document.getElementById("filtroEstado");
-      for (const opt of sel.options) {
-        if (/pend|atras|vence|aberto/i.test(opt.value)) {
-          sel.value = opt.value;
-          break;
-        }
-      }
-      aplicarFiltros();
-    }
-
-    function popularFiltros(items) {
-      const selEstado = document.getElementById("filtroEstado");
-      const selMes = document.getElementById("filtroMes");
-      const estadoAtual = selEstado.value;
-      const mesAtual = selMes.value;
-
-      const estados = [...new Set(items.map(i => i.status).filter(Boolean))];
-      selEstado.innerHTML = `<option value="">Todos os estados</option>` +
-        estados.map(e => `<option value="${e}" ${e === estadoAtual ? "selected" : ""}>${e}</option>`).join("");
-
-      const meses = [...new Set(items.map(i => i.dataIso ? i.dataIso.slice(0, 7) : "").filter(Boolean))].sort().reverse();
-      selMes.innerHTML = `<option value="">Todos os meses</option>` +
-        meses.map(m => `<option value="${m}" ${m === mesAtual ? "selected" : ""}>${m}</option>`).join("");
+    // --- FILTRAGEM E SEPARAÇÃO POR ABA ---
+    function popularCategorias(items) {
+      const sel = document.getElementById("filtroCategoriaSelect");
+      const atual = sel.value;
+      const cats = [...new Set(items.map(i => i.categoria).filter(Boolean))];
+      sel.innerHTML = `<option value="">Todas as categorias</option>` +
+        cats.map(c => `<option value="${c}" ${c === atual ? "selected" : ""}>${c}</option>`).join("");
     }
 
     function aplicarFiltros() {
       const termo = document.getElementById("filtroTexto").value.toLowerCase().trim();
-      const estado = document.getElementById("filtroEstado").value;
-      const mes = document.getElementById("filtroMes").value;
+      const catFiltro = document.getElementById("filtroCategoriaSelect").value;
+      const mesFolha = document.getElementById("mesFolhaInput").value;
 
-      itensFiltrados = itensBrutos.filter(item => {
-        if (estado && item.status !== estado) return false;
-        if (mes && (!item.dataIso || !item.dataIso.startsWith(mes))) return false;
+      let base = itensBrutos.filter(item => {
+        if (catFiltro && item.categoria !== catFiltro) return false;
         if (termo) {
-          const textoCompleto = [item.titulo, item.status, item.categoria, ...item.colunas.map(c => c.valor)].join(" ").toLowerCase();
-          if (!textoCompleto.includes(termo)) return false;
+          const txt = [item.titulo, item.status, item.categoria, ...item.colunas.map(c => c.valor)].join(" ").toLowerCase();
+          if (!txt.includes(termo)) return false;
         }
         return true;
       });
 
-      atualizarResumoEGraficos(itensFiltrados);
-      renderizarLista(itensFiltrados);
+      // Comportamento específico da FOLHA SALARIAL (dia 01 a 31 do mês recorrente + sub-abas)
+      if (abaAtual === "folha") {
+        document.getElementById("secaoLiquidados").style.display = "none";
+
+        const doMes = base.filter(i => !mesFolha || !i.dataIso || i.dataIso.startsWith(mesFolha));
+        const pendentesFolha = doMes.filter(i => !i.isSettled);
+        const pagosFolha = doMes.filter(i => i.isSettled);
+
+        document.getElementById("sub-folha-pendentes").textContent = `⏳ Por Pagar (${pendentesFolha.length})`;
+        document.getElementById("sub-folha-pagos").textContent = `✅ Pagos (${pagosFolha.length})`;
+        document.getElementById("sub-folha-todos").textContent = `📋 Todos do Mês (${doMes.length})`;
+
+        let listaAtiva = doMes;
+        if (filtroFolhaAtual === "pendentes") listaAtiva = pendentesFolha;
+        if (filtroFolhaAtual === "pagos") listaAtiva = pagosFolha;
+
+        itensVisiveisExport = listaAtiva;
+        atualizarResumoEGraficos(doMes);
+        document.getElementById("lista").innerHTML = listaAtiva.length
+          ? listaAtiva.map(item => renderizarCard(item, true)).join("")
+          : "<p>Nenhum colaborador encontrado neste separador do mês.</p>";
+        return;
+      }
+
+      // Comportamento específico de MOVIMENTOS (Pendências primeiro + Gaveta de Pagos/Recebidos)
+      if (abaAtual === "movimentos") {
+        const pendentes = base.filter(i => !i.isSettled);
+        const liquidados = base.filter(i => i.isSettled);
+
+        itensVisiveisExport = base;
+        atualizarResumoEGraficos(base);
+
+        document.getElementById("lista").innerHTML = `
+          <div class="section-label">⏳ Pendências a Pagar / Receber (${pendentes.length})</div>
+          ${pendentes.length ? pendentes.map(item => renderizarCard(item, false)).join("") : "<p>Sem pendências em aberto neste momento.</p>"}
+        `;
+
+        const secLiq = document.getElementById("secaoLiquidados");
+        secLiq.style.display = "block";
+        document.getElementById("textoGavetaLiquidados").textContent = `📁 Ver Pagos e Recebidos (${liquidados.length})`;
+        document.getElementById("listaLiquidados").innerHTML = liquidados.length
+          ? liquidados.map(item => renderizarCard(item, false)).join("")
+          : "<p>Nenhum movimento pago ou recebido ainda.</p>";
+        return;
+      }
+
+      // Comportamento de ORÇAMENTOS
+      document.getElementById("secaoLiquidados").style.display = "none";
+      itensVisiveisExport = base;
+      atualizarResumoEGraficos(base);
+      document.getElementById("lista").innerHTML = base.length
+        ? base.map(item => renderizarCard(item, false)).join("")
+        : "<p>Nenhum orçamento encontrado.</p>";
+    }
+
+    function renderizarCard(item, isColaborador) {
+      const badgeClass = item.isSettled ? "badge paid" : "badge pending";
+
+      let barraOrcamentoHtml = "";
+      if (abaAtual === "orcamentos") {
+        const colPrev = item.colunas.find(c => /prev|orçad|orcad|meta|limite/i.test(c.nome) && c.rawNum > 0);
+        const colReal = item.colunas.find(c => /real|gast|execut|atual/i.test(c.nome) && c.rawNum !== null);
+        if (colPrev && colReal) {
+          const pct = Math.round((colReal.rawNum / colPrev.rawNum) * 100);
+          const width = Math.min(pct, 100);
+          const fillClass = pct > 100 ? "budget-fill over" : (pct >= 80 ? "budget-fill warn" : "budget-fill");
+          barraOrcamentoHtml = `
+            <div class="budget-bar-wrap">
+              <div class="budget-bar-info"><span>Execução</span><span>${pct}% (${colReal.valor} € / ${colPrev.valor} €)</span></div>
+              <div class="budget-track"><div class="${fillClass}" style="width:${width}%"></div></div>
+            </div>
+          `;
+        }
+      }
+
+      return `
+        <div class="card">
+          <div class="card-top">
+            <span class="card-title" onclick='${isColaborador ? `abrirDetalhesColaborador(${JSON.stringify(item).replace(/'/g, "&#39;")})` : `abrirDetalhesCategoria("${item.categoria}")`}'>
+              ${item.titulo} ${isColaborador ? "👤" : ""}
+            </span>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <span class="cat-pill" onclick='abrirDetalhesCategoria("${item.categoria}")'>${item.categoria}</span>
+              <span class="${badgeClass}">${item.status}</span>
+            </div>
+          </div>
+          ${barraOrcamentoHtml}
+          ${item.colunas.length > 0 ? `
+            <div class="grid">
+              ${item.colunas.map(c => `<div><span class="prop-label">${c.nome}</span><span class="prop-val">${c.valor}</span></div>`).join("")}
+            </div>
+          ` : ""}
+          <div class="card-actions">
+            ${!item.isSettled ? `<button class="btn-mini pay" onclick="marcarComoPago('${item.id}')">✓ Marcar ${item.tipoFluxo === "entrada" ? "Recebido" : "Pago"}</button>` : ""}
+            ${isColaborador ? `<button class="btn-mini" onclick='abrirDetalhesColaborador(${JSON.stringify(item).replace(/'/g, "&#39;")})'>👤 Ficha Colaborador</button>` : ""}
+            <button class="btn-mini" onclick='abrirFormulario(${JSON.stringify(item).replace(/'/g, "&#39;")}, false)'>✏️ Editar</button>
+            <button class="btn-mini" onclick='abrirFormulario(${JSON.stringify(item).replace(/'/g, "&#39;")}, true)'>📋 Duplicar</button>
+            <button class="btn-mini del" onclick="apagarRegisto('${item.id}', '${item.titulo.replace(/'/g, "\\'")}')">🗑 Remover</button>
+          </div>
+        </div>
+      `;
     }
 
     function atualizarResumoEGraficos(items) {
-      let entradas = 0;
-      let saidas = 0;
+      let entRealizadas = 0;
+      let saiRealizadas = 0;
+      let pendentesAberto = 0;
       const porCategoria = {};
       const porEstado = {};
 
       items.forEach(item => {
-        const valAbs = Math.abs(item.valorNumerico || 0);
-        if (item.tipoFluxo === "saida" || item.valorNumerico < 0) {
-          saidas += valAbs;
+        const val = Math.abs(item.valorNumerico || 0);
+        if (item.isSettled) {
+          if (item.tipoFluxo === "saida" || item.valorNumerico < 0) saiRealizadas += val;
+          else entRealizadas += val;
         } else {
-          entradas += valAbs;
+          pendentesAberto += (item.tipoFluxo === "saida" ? -val : val);
         }
 
         const cat = item.categoria || "Geral";
-        porCategoria[cat] = (porCategoria[cat] || 0) + (valAbs || 1);
+        porCategoria[cat] = (porCategoria[cat] || 0) + (val || 1);
 
-        const est = item.status || "Sem estado";
-        porEstado[est] = (porEstado[est] || 0) + (valAbs || 1);
+        const est = item.isSettled ? "Pagos / Recebidos" : "Pendentes";
+        porEstado[est] = (porEstado[est] || 0) + (val || 1);
       });
 
-      const saldo = entradas - saidas;
-      document.getElementById("sumIn").textContent = entradas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
-      document.getElementById("sumOut").textContent = saidas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
-      document.getElementById("sumNet").textContent = saldo.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
-      document.getElementById("sumCount").textContent = items.length;
+      const previsaoAtual = (entRealizadas - saiRealizadas) + pendentesAberto;
+
+      document.getElementById("lblSum1").textContent = "Entradas Realizadas";
+      document.getElementById("lblSum2").textContent = "Saídas Realizadas";
+      document.getElementById("lblSum3").textContent = "Saldo Pendente";
+      document.getElementById("lblSum4").textContent = "Previsão Atualizada";
+
+      document.getElementById("sumIn").textContent = entRealizadas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      document.getElementById("sumOut").textContent = saiRealizadas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      document.getElementById("sumPend").textContent = pendentesAberto.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      document.getElementById("sumNet").textContent = previsaoAtual.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+
+      // Pílulas clicáveis de categorias
+      const catsKeys = Object.keys(porCategoria);
+      document.getElementById("pilsCategorias").innerHTML = catsKeys.map(c =>
+        `<button class="cat-pill" onclick='abrirDetalhesCategoria("${c}")'>🔍 ${c} (${porCategoria[c].toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €)</button>`
+      ).join("");
 
       if (typeof Chart === "undefined") return;
-
       const ctxCat = document.getElementById("chartCategorias");
       const ctxEst = document.getElementById("chartEstados");
       if (!ctxCat || !ctxEst) return;
@@ -603,13 +913,23 @@
       chartCatInstance = new Chart(ctxCat, {
         type: "doughnut",
         data: {
-          labels: Object.keys(porCategoria),
+          labels: catsKeys,
           datasets: [{
             data: Object.values(porCategoria),
             backgroundColor: ["#0071e3", "#34c759", "#ff9500", "#ff3b30", "#af52de", "#5ac8fa", "#8e8e93"]
           }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "right" } } }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (_, elements) => {
+            if (elements.length > 0) {
+              const idx = elements[0].index;
+              abrirDetalhesCategoria(catsKeys[idx]);
+            }
+          },
+          plugins: { legend: { position: "right" } }
+        }
       });
 
       chartEstInstance = new Chart(ctxEst, {
@@ -619,7 +939,7 @@
           datasets: [{
             label: "Total (€)",
             data: Object.values(porEstado),
-            backgroundColor: "#0071e3",
+            backgroundColor: ["#ff9500", "#34c759"],
             borderRadius: 6
           }]
         },
@@ -627,94 +947,119 @@
       });
     }
 
+    // --- RELATÓRIOS COMPLETOS DE SAÚDE FINANCEIRA (MENSAL / TRIMESTRAL / ANUAL) ---
+    function renderizarSaudeFinanceira(data) {
+      dadosSaudeCache = data;
+      const agora = new Date();
+      const anoAtual = agora.getFullYear();
+      const mesAtual = agora.getMonth(); // 0..11
+      const trimestreAtual = Math.floor(mesAtual / 3); // 0..3
+
+      const filtrarPorPeriodo = (iso) => {
+        if (!iso) return true;
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return true;
+        if (periodoSaudeAtual === "anual") return d.getFullYear() === anoAtual;
+        if (periodoSaudeAtual === "trimestral") return d.getFullYear() === anoAtual && Math.floor(d.getMonth() / 3) === trimestreAtual;
+        return d.getFullYear() === anoAtual && d.getMonth() === mesAtual;
+      };
+
+      const movPeriodo = (data.movimentos || []).filter(m => filtrarPorPeriodo(m.dataIso));
+      const salPeriodo = (data.salarios || []).filter(s => filtrarPorPeriodo(s.dataIso));
+
+      let entradasPagas = 0;
+      let entradasReceber = 0;
+      let saidasPagas = 0;
+      let saidasPagar = 0;
+
+      movPeriodo.forEach(m => {
+        const v = Math.abs(m.valorNumerico || 0);
+        if (m.tipoFluxo === "entrada") {
+          if (m.isSettled) entradasPagas += v;
+          else entradasReceber += v;
+        } else {
+          if (m.isSettled) saidasPagas += v;
+          else saidasPagar += v;
+        }
+      });
+
+      salPeriodo.forEach(s => {
+        const v = Math.abs(s.valorNumerico || 0);
+        if (s.isSettled) saidasPagas += v;
+        else saidasPagar += v;
+      });
+
+      const saldoRealizado = entradasPagas - saidasPagas;
+      const previsaoAtualizada = saldoRealizado + entradasReceber - saidasPagar;
+
+      document.getElementById("resumoExecutivo").style.display = "grid";
+      document.getElementById("lblSum1").textContent = "Recebido (Realizado)";
+      document.getElementById("lblSum2").textContent = "Pago (Mov. + Salários)";
+      document.getElementById("lblSum3").textContent = "A Receber - A Pagar";
+      document.getElementById("lblSum4").textContent = "Previsão Final Atualizada";
+
+      document.getElementById("sumIn").textContent = entradasPagas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      document.getElementById("sumOut").textContent = saidasPagas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      document.getElementById("sumPend").textContent = (entradasReceber - saidasPagar).toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      document.getElementById("sumNet").textContent = previsaoAtualizada.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+
+      const nomePeriodo = periodoSaudeAtual === "anual"
+        ? `Ano ${anoAtual}`
+        : (periodoSaudeAtual === "trimestral" ? `${trimestreAtual + 1}º Trimestre de ${anoAtual}` : `${String(mesAtual + 1).padStart(2, "0")}/${anoAtual}`);
+
+      document.getElementById("lista").innerHTML = `
+        <div class="card">
+          <div class="card-top">
+            <span class="card-title">Demonstrativo Consolidado — ${nomePeriodo}</span>
+            <span class="badge ${previsaoAtualizada >= 0 ? "paid" : "pending"}">${previsaoAtualizada >= 0 ? "Superávit Previsto" : "Atenção ao Fluxo"}</span>
+          </div>
+          <div class="grid">
+            <div><span class="prop-label">Entradas já Recebidas</span><span class="prop-val val-in">+ ${entradasPagas.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
+            <div><span class="prop-label">Entradas a Receber</span><span class="prop-val">+ ${entradasReceber.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
+            <div><span class="prop-label">Saídas e Salários Pagos</span><span class="prop-val val-out">- ${saidasPagas.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
+            <div><span class="prop-label">Contas e Salários a Pagar</span><span class="prop-val val-warn">- ${saidasPagar.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
+            <div><span class="prop-label">Caixa Atual (Realizado)</span><span class="prop-val">${saldoRealizado.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
+            <div><span class="prop-label">Previsão Atualizada</span><span class="prop-val val-net">${previsaoAtualizada.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
+          </div>
+        </div>
+        ${(data.kpis && data.kpis.length > 0) ? `
+          <div class="section-label">Indicadores Extraídos do Notion</div>
+          <div class="kpi-grid">
+            ${data.kpis.map(k => `<div class="kpi-card"><span class="kpi-label">${k.indicador}</span><div class="kpi-value">${k.valor}</div></div>`).join("")}
+          </div>
+        ` : ""}
+      `;
+    }
+
     function exportarCSV() {
-      if (!itensFiltrados.length) {
+      if (!itensVisiveisExport.length) {
         alert("Não há registos visíveis para exportar.");
         return;
       }
-      const cabecalhos = ["Título", "Estado", ...new Set(itensFiltrados.flatMap(i => i.colunas.map(c => c.nome)))];
+      const cabecalhos = ["Título", "Categoria", "Estado", ...new Set(itensVisiveisExport.flatMap(i => i.colunas.map(c => c.nome)))];
       const linhas = [cabecalhos.join(";")];
 
-      itensFiltrados.forEach(item => {
-        const mapa = { "Título": item.titulo, "Estado": item.status };
+      itensVisiveisExport.forEach(item => {
+        const mapa = { "Título": item.titulo, "Categoria": item.categoria, "Estado": item.status };
         item.colunas.forEach(c => { mapa[c.nome] = c.valor; });
-        const linha = cabecalhos.map(h => `"${String(mapa[h] || "").replace(/"/g, '""')}"`).join(";");
-        linhas.push(linha);
+        linhas.push(cabecalhos.map(h => `"${String(mapa[h] || "").replace(/"/g, '""')}"`).join(";"));
       });
 
       const blob = new Blob(["\uFEFF" + linhas.join("\n")], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `gestao-${abaAtual}-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `relatorio-${abaAtual}-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
-    }
-
-    function renderizarLista(items) {
-      const lista = document.getElementById("lista");
-      if (!items || items.length === 0) {
-        lista.innerHTML = "<p>Nenhum registo encontrado com os filtros atuais.</p>";
-        return;
-      }
-
-      lista.innerHTML = items.map((item, idx) => {
-        const isPending = /pend|atras|vence|aberto/i.test(item.status || "");
-        const isPaid = /pag|conclu|recebid|liquid/i.test(item.status || "");
-        const badgeClass = isPaid ? "badge paid" : (isPending ? "badge pending" : "badge");
-
-        // Barra de progresso automática na aba Orçamentos
-        let barraOrcamentoHtml = "";
-        if (abaAtual === "orcamentos") {
-          const colPrev = item.colunas.find(c => /prev|orçad|orcad|meta|limite/i.test(c.nome) && c.rawNum > 0);
-          const colReal = item.colunas.find(c => /real|gast|execut|atual/i.test(c.nome) && c.rawNum !== null);
-          if (colPrev && colReal) {
-            const pct = Math.round((colReal.rawNum / colPrev.rawNum) * 100);
-            const width = Math.min(pct, 100);
-            const fillClass = pct > 100 ? "budget-fill over" : (pct >= 80 ? "budget-fill warn" : "budget-fill");
-            barraOrcamentoHtml = `
-              <div class="budget-bar-wrap">
-                <div class="budget-bar-info">
-                  <span>Execução do Orçamento</span>
-                  <span>${pct}% (${colReal.valor} € / ${colPrev.valor} €)</span>
-                </div>
-                <div class="budget-track"><div class="${fillClass}" style="width:${width}%"></div></div>
-              </div>
-            `;
-          }
-        }
-
-        return `
-          <div class="card">
-            <div class="card-top">
-              <span class="card-title">${item.titulo}</span>
-              ${item.status ? `<span class="${badgeClass}">${item.status}</span>` : ""}
-            </div>
-            ${barraOrcamentoHtml}
-            ${item.colunas.length > 0 ? `
-              <div class="grid">
-                ${item.colunas.map(c => `
-                  <div>
-                    <span class="prop-label">${c.nome}</span>
-                    <span class="prop-val">${c.valor}</span>
-                  </div>
-                `).join("")}
-              </div>
-            ` : ""}
-            <div class="card-actions">
-              ${!isPaid ? `<button class="btn-mini pay" onclick="marcarComoPago('${item.id}')">✓ Marcar Pago</button>` : ""}
-              <button class="btn-mini" onclick='abrirFormulario(itensFiltrados[${idx}], false)'>✏️ Editar</button>
-              <button class="btn-mini" onclick='abrirFormulario(itensFiltrados[${idx}], true)'>📋 Duplicar</button>
-              <button class="btn-mini del" onclick="apagarRegisto('${item.id}', '${item.titulo.replace(/'/g, "\\'")}')">🗑 Remover</button>
-            </div>
-          </div>
-        `;
-      }).join("");
     }
 
     async function carregarDados(silencioso = false) {
       const lista = document.getElementById("lista");
       if (!silencioso) lista.innerHTML = "Carregando...";
+
+      document.getElementById("subTabsFolha").style.display = abaAtual === "folha" ? "flex" : "none";
+      document.getElementById("subTabsSaude").style.display = abaAtual === "saude" ? "flex" : "none";
 
       try {
         const res = await fetch(`/api/notion?tab=${abaAtual}`, {
@@ -734,45 +1079,22 @@
           return;
         }
 
-        const isKpiMode = data.mode === "kpis";
-        document.getElementById("resumoExecutivo").style.display = isKpiMode ? "none" : "grid";
-        document.getElementById("barraFiltros").style.display = isKpiMode ? "none" : "flex";
-        document.getElementById("painelGraficos").style.display = (!isKpiMode && mostrarGraficos) ? "grid" : "none";
-        document.getElementById("btnChartsToggle").style.display = isKpiMode ? "none" : "inline-block";
-        document.getElementById("btnExport").style.display = isKpiMode ? "none" : "inline-block";
-
-        if (isKpiMode) {
-          document.getElementById("alertaVencimentos").style.display = "none";
-          if (!data.kpis || data.kpis.length === 0) {
-            lista.innerHTML = "<p>Nenhum indicador numérico encontrado em Saúde Financeira.</p>";
-            return;
-          }
-          lista.innerHTML = `
-            <div class="kpi-grid">
-              ${data.kpis.map(k => `
-                <div class="kpi-card">
-                  <span class="kpi-label">${k.indicador}</span>
-                  <div class="kpi-value">${k.valor}</div>
-                </div>
-              `).join("")}
-            </div>
-          `;
+        if (data.mode === "saude_completa") {
+          document.getElementById("barraFiltros").style.display = "none";
+          document.getElementById("painelGraficos").style.display = "none";
+          document.getElementById("secaoLiquidados").style.display = "none";
+          document.getElementById("btnExport").style.display = "none";
+          renderizarSaudeFinanceira(data);
           return;
         }
 
+        document.getElementById("resumoExecutivo").style.display = "grid";
+        document.getElementById("barraFiltros").style.display = "flex";
+        document.getElementById("painelGraficos").style.display = "grid";
+        document.getElementById("btnExport").style.display = "inline-block";
+
         itensBrutos = data.items || [];
-
-        // Verificar pendentes para o banner de alerta
-        const pendentes = itensBrutos.filter(i => /pend|atras|vence|aberto/i.test(i.status || ""));
-        const alertaEl = document.getElementById("alertaVencimentos");
-        if (pendentes.length > 0) {
-          document.getElementById("textoAlerta").textContent = `⚠️ Atenção: Existem ${pendentes.length} lançamento(s) pendente(s) ou por liquidar nesta aba.`;
-          alertaEl.style.display = "flex";
-        } else {
-          alertaEl.style.display = "none";
-        }
-
-        popularFiltros(itensBrutos);
+        popularCategorias(itensBrutos);
         aplicarFiltros();
       } catch (err) {
         if (!silencioso) lista.innerHTML = `<div class="erro">Erro de rede ao carregar dados.</div>`;
