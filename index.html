@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestão Financeira Empresarial</title>
   <link rel="manifest" href="/manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; background: #f2f2f7; margin: 0; padding: 20px 16px; color: #1c1c1e; }
-    .container { max-width: 820px; margin: 0 auto; }
+    .container { max-width: 920px; margin: 0 auto; }
 
     /* Ecrã de Login */
     .login-screen { max-width: 380px; margin: 70px auto; background: white; padding: 28px 24px; border-radius: 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); text-align: center; }
@@ -21,26 +22,73 @@
     .login-btn:disabled { opacity: 0.6; }
 
     /* Cabeçalho e Navegação */
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; gap: 10px; flex-wrap: wrap; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap; }
     .brand h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
     .brand span { font-size: 12px; color: #6e6e73; }
-    .header-actions { display: flex; gap: 8px; align-items: center; }
-    .btn-new { background: #1c1c1e; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: opacity 0.15s; }
+    .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .btn-new { background: #1c1c1e; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; }
     .btn-new:hover { opacity: 0.85; }
-    .btn-logout { background: white; color: #6e6e73; border: 1px solid #d1d1d6; padding: 10px 12px; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; }
+    .btn-sec { background: white; color: #1c1c1e; border: 1px solid #d1d1d6; padding: 9px 12px; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; }
+    .btn-sec:hover { background: #f8f8fa; }
+    .btn-logout { background: white; color: #6e6e73; border: 1px solid #d1d1d6; padding: 9px 12px; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; }
     .btn-logout:hover { color: #d93025; border-color: #f5c2c7; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
+
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
     .tab { background: #e5e5ea; color: #3a3a3c; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap; }
     .tab.active { background: #0071e3; color: white; box-shadow: 0 2px 8px rgba(0,113,227,0.25); }
 
+    /* Alerta de Vencimentos */
+    .alert-banner { background: #fff8e6; border: 1px solid #ffe082; color: #8a5a00; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .alert-banner button { background: #8a5a00; color: white; border: none; padding: 5px 10px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+    /* Resumo Executivo */
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .summary-card { background: white; padding: 14px 16px; border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+    .summary-card span { font-size: 11px; font-weight: 700; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 4px; }
+    .summary-card strong { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
+    .val-in { color: #188038; }
+    .val-out { color: #d93025; }
+    .val-net { color: #0071e3; }
+
+    /* Painel de Gráficos */
+    .charts-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .chart-box { background: white; padding: 16px; border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+    .chart-box h3 { margin: 0 0 10px 0; font-size: 13px; color: #6e6e73; text-transform: uppercase; letter-spacing: 0.3px; }
+    .chart-canvas-holder { position: relative; height: 210px; width: 100%; }
+
+    /* Barra de Filtros */
+    .filters-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filters-bar input, .filters-bar select { padding: 9px 12px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 13px; background: white; color: #1c1c1e; }
+    .filters-bar input { flex: 1; min-width: 180px; }
+
     /* Cartões de Registos */
     .card { background: white; padding: 16px 18px; border-radius: 14px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.03); }
-    .card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
     .card-title { font-size: 16px; font-weight: 600; color: #1c1c1e; }
     .badge { background: #eef6ff; color: #0071e3; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .badge.pending { background: #fff3cd; color: #856404; }
+    .badge.paid { background: #e6f4ea; color: #188038; }
+
+    /* Barra de Progresso de Orçamento */
+    .budget-bar-wrap { margin: 10px 0 4px 0; }
+    .budget-bar-info { display: flex; justify-content: space-between; font-size: 11px; color: #6e6e73; margin-bottom: 4px; font-weight: 600; }
+    .budget-track { width: 100%; height: 8px; background: #e5e5ea; border-radius: 6px; overflow: hidden; }
+    .budget-fill { height: 100%; background: #188038; border-radius: 6px; transition: width 0.3s; }
+    .budget-fill.warn { background: #f29900; }
+    .budget-fill.over { background: #d93025; }
+
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; border-top: 1px solid #f2f2f7; padding-top: 12px; }
     .prop-label { color: #8e8e93; font-size: 11px; font-weight: 600; display: block; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
     .prop-val { font-weight: 600; font-size: 14px; color: #1c1c1e; }
+
+    /* Ações Rápidas no Cartão */
+    .card-actions { display: flex; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed #ececef; flex-wrap: wrap; }
+    .btn-mini { background: #f2f2f7; color: #3a3a3c; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-mini:hover { background: #e5e5ea; }
+    .btn-mini.pay { background: #e6f4ea; color: #188038; }
+    .btn-mini.pay:hover { background: #ceead6; }
+    .btn-mini.del { background: #fce8e6; color: #d93025; margin-left: auto; }
+    .btn-mini.del:hover { background: #fad2cf; }
 
     /* Grelha de KPIs Numéricos */
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
@@ -92,22 +140,61 @@
         <span>Sincronizado em tempo real com Notion</span>
       </div>
       <div class="header-actions">
+        <button class="btn-sec" id="btnChartsToggle" onclick="alternarGraficos()">📊 Gráficos</button>
+        <button class="btn-sec" id="btnExport" onclick="exportarCSV()">📥 CSV</button>
         <button class="btn-new" id="btnNovo" onclick="abrirFormulario()">+ Novo Movimento</button>
         <button class="btn-logout" onclick="terminarSessao()">Sair</button>
       </div>
     </header>
 
-    <div class="tabs">
+    <div class="tabs" id="tabsBar">
       <button class="tab active" id="tab-movimentos" onclick="mudarAba('movimentos', this)">Movimentos</button>
       <button class="tab" id="tab-folha" onclick="mudarAba('folha', this)">Folha Salarial</button>
       <button class="tab" id="tab-orcamentos" onclick="mudarAba('orcamentos', this)">Orçamentos</button>
       <button class="tab" id="tab-saude" onclick="mudarAba('saude', this)">Saúde Financeira</button>
     </div>
 
+    <!-- Alerta de Pendentes / Vencimentos -->
+    <div id="alertaVencimentos" class="alert-banner" style="display:none;">
+      <span id="textoAlerta"></span>
+      <button onclick="filtrarPendentes()">Ver pendentes</button>
+    </div>
+
+    <!-- Cartões de Resumo -->
+    <div id="resumoExecutivo" class="summary-grid" style="display:none;">
+      <div class="summary-card"><span>Entradas / Créditos</span><strong id="sumIn" class="val-in">0,00 €</strong></div>
+      <div class="summary-card"><span>Saídas / Custos</span><strong id="sumOut" class="val-out">0,00 €</strong></div>
+      <div class="summary-card"><span>Saldo Líquido</span><strong id="sumNet" class="val-net">0,00 €</strong></div>
+      <div class="summary-card"><span>Registos Filtrados</span><strong id="sumCount">0</strong></div>
+    </div>
+
+    <!-- Gráficos -->
+    <div id="painelGraficos" class="charts-wrap" style="display:none;">
+      <div class="chart-box">
+        <h3>Distribuição por Categoria</h3>
+        <div class="chart-canvas-holder"><canvas id="chartCategorias"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h3>Resumo por Estado / Situação</h3>
+        <div class="chart-canvas-holder"><canvas id="chartEstados"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Barra de Pesquisa e Filtros -->
+    <div id="barraFiltros" class="filters-bar" style="display:none;">
+      <input type="text" id="filtroTexto" placeholder="Pesquisar por descrição, valor ou detalhe..." oninput="aplicarFiltros()">
+      <select id="filtroEstado" onchange="aplicarFiltros()">
+        <option value="">Todos os estados</option>
+      </select>
+      <select id="filtroMes" onchange="aplicarFiltros()">
+        <option value="">Todos os meses</option>
+      </select>
+    </div>
+
     <div id="lista">Carregando...</div>
   </div>
 
-  <!-- Modal Dinâmico -->
+  <!-- Modal Dinâmico (Criar / Editar / Duplicar) -->
   <div class="modal-bg" id="modalNovo">
     <div class="modal">
       <h2 id="modalTitulo">Novo Registo</h2>
@@ -126,6 +213,12 @@
   <script>
     let abaAtual = "movimentos";
     let intervaloSync = null;
+    let itensBrutos = [];
+    let itensFiltrados = [];
+    let editandoPageId = null;
+    let mostrarGraficos = true;
+    let chartCatInstance = null;
+    let chartEstInstance = null;
 
     const configAbas = {
       movimentos: { btn: "+ Novo Movimento", titulo: "Novo Movimento Financeiro", sub: "Registar entrada, despesa ou conta a pagar/receber" },
@@ -134,8 +227,14 @@
       saude: { btn: "", titulo: "", sub: "" }
     };
 
-    function obterSenha() {
-      return localStorage.getItem("portal_financeiro_pass") || "";
+    function obterSenha() { return localStorage.getItem("portal_financeiro_pass") || ""; }
+
+    function aplicarPermissoes(role) {
+      const restritas = ["tab-folha", "tab-orcamentos", "tab-saude"];
+      restritas.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = role === "staff" ? "none" : "inline-block";
+      });
     }
 
     function mostrarLogin(mensagemErro = "") {
@@ -151,12 +250,17 @@
       }
     }
 
-    function mostrarApp() {
+    function mostrarApp(role = "admin") {
       document.getElementById("loginBox").style.display = "none";
       document.getElementById("appBox").style.display = "block";
+      aplicarPermissoes(role);
       carregarDados();
       if (intervaloSync) clearInterval(intervaloSync);
-      intervaloSync = setInterval(carregarDados, 30000);
+      intervaloSync = setInterval(() => {
+        if (!document.getElementById("modalNovo").classList.contains("open")) {
+          carregarDados(true);
+        }
+      }, 30000);
     }
 
     async function fazerLogin(e) {
@@ -170,16 +274,13 @@
       erroEl.style.display = "none";
 
       try {
-        const res = await fetch("/api/notion?auth=1", {
-          headers: { "x-app-password": senha }
-        });
-
+        const res = await fetch("/api/notion?auth=1", { headers: { "x-app-password": senha } });
+        const data = await res.json();
         if (res.ok) {
           localStorage.setItem("portal_financeiro_pass", senha);
           document.getElementById("inputSenha").value = "";
-          mostrarApp();
+          mostrarApp(data.role || "admin");
         } else {
-          const data = await res.json();
           erroEl.textContent = data.error || "Senha incorreta.";
           erroEl.style.display = "block";
         }
@@ -197,6 +298,11 @@
       mostrarLogin();
     }
 
+    function alternarGraficos() {
+      mostrarGraficos = !mostrarGraficos;
+      document.getElementById("painelGraficos").style.display = (mostrarGraficos && abaAtual !== "saude") ? "grid" : "none";
+    }
+
     function mudarAba(novaAba, botao) {
       abaAtual = novaAba;
       document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
@@ -210,16 +316,25 @@
         btnNovo.style.display = "none";
       }
 
+      document.getElementById("filtroTexto").value = "";
+      document.getElementById("filtroEstado").value = "";
+      document.getElementById("filtroMes").value = "";
       carregarDados();
     }
 
-    async function abrirFormulario() {
+    async function abrirFormulario(itemExistente = null, isDuplicate = false) {
       const modal = document.getElementById("modalNovo");
       const container = document.getElementById("camposDinamicos");
       const erroBox = document.getElementById("erroForm");
 
-      document.getElementById("modalTitulo").textContent = configAbas[abaAtual].titulo;
-      document.getElementById("modalSubtitulo").textContent = configAbas[abaAtual].sub;
+      editandoPageId = (itemExistente && !isDuplicate) ? itemExistente.id : null;
+      document.getElementById("modalTitulo").textContent = editandoPageId
+        ? "Editar Registo"
+        : (isDuplicate ? "Duplicar Lançamento" : configAbas[abaAtual].titulo);
+      document.getElementById("modalSubtitulo").textContent = editandoPageId
+        ? "Altere os campos desejados para atualizar no Notion"
+        : configAbas[abaAtual].sub;
+
       erroBox.style.display = "none";
       container.innerHTML = "<p>A carregar estrutura de campos...</p>";
       modal.classList.add("open");
@@ -228,11 +343,7 @@
         const res = await fetch(`/api/notion?tab=${abaAtual}&schema=1`, {
           headers: { "x-app-password": obterSenha() }
         });
-        if (res.status === 401) {
-          fecharFormulario();
-          terminarSessao();
-          return;
-        }
+        if (res.status === 401) { fecharFormulario(); terminarSessao(); return; }
         const data = await res.json();
 
         if (!res.ok) {
@@ -241,11 +352,16 @@
         }
 
         const hoje = new Date().toISOString().split("T")[0];
+        const rawVals = itemExistente ? itemExistente.raw : {};
+
         container.innerHTML = data.campos.map((campo, idx) => {
           const idCampo = `campo_${idx}`;
+          const valAtual = rawVals[campo.nome] !== undefined ? rawVals[campo.nome] : "";
 
           if (campo.tipo === "select" || campo.tipo === "status" || campo.tipo === "multi_select") {
-            const optsHtml = campo.opcoes.map(o => `<option value="${o}">${o}</option>`).join("");
+            const listaOpts = [...campo.opcoes];
+            if (valAtual && !listaOpts.includes(valAtual)) listaOpts.push(valAtual);
+            const optsHtml = listaOpts.map(o => `<option value="${o}" ${o === valAtual ? "selected" : ""}>${o}</option>`).join("");
             return `
               <div class="field">
                 <label>${campo.nome}</label>
@@ -264,16 +380,17 @@
             return `
               <div class="field">
                 <label>${campo.nome} (€)</label>
-                <input type="number" step="0.01" data-col="${campo.nome}" placeholder="0.00">
+                <input type="number" step="0.01" data-col="${campo.nome}" value="${valAtual}" placeholder="0.00">
               </div>
             `;
           }
 
           if (campo.tipo === "date") {
+            const dataCampo = isDuplicate ? hoje : (valAtual || hoje);
             return `
               <div class="field">
                 <label>${campo.nome}</label>
-                <input type="date" data-col="${campo.nome}" value="${hoje}">
+                <input type="date" data-col="${campo.nome}" value="${dataCampo}">
               </div>
             `;
           }
@@ -282,7 +399,7 @@
             return `
               <div class="field">
                 <label class="checkbox-row">
-                  <input type="checkbox" data-col="${campo.nome}">
+                  <input type="checkbox" data-col="${campo.nome}" ${valAtual ? "checked" : ""}>
                   <span>${campo.nome}</span>
                 </label>
               </div>
@@ -292,7 +409,7 @@
           return `
             <div class="field">
               <label>${campo.nome} ${campo.tipo === "title" ? "*" : ""}</label>
-              <input type="text" data-col="${campo.nome}" ${campo.tipo === "title" ? "required" : ""} placeholder="Escreva aqui...">
+              <input type="text" data-col="${campo.nome}" value="${String(valAtual).replace(/"/g, '&quot;')}" ${campo.tipo === "title" ? "required" : ""} placeholder="Escreva aqui...">
             </div>
           `;
         }).join("");
@@ -314,6 +431,7 @@
     }
 
     function fecharFormulario() {
+      editandoPageId = null;
       document.getElementById("modalNovo").classList.remove("open");
     }
 
@@ -331,20 +449,19 @@
         valores[col] = el.type === "checkbox" ? el.checked : el.value;
       });
 
+      const metodo = editandoPageId ? "PATCH" : "POST";
+      const payload = editandoPageId ? { pageId: editandoPageId, valores } : { valores };
+
       try {
         const res = await fetch(`/api/notion?tab=${abaAtual}`, {
-          method: "POST",
+          method: metodo,
           headers: {
             "Content-Type": "application/json",
             "x-app-password": obterSenha()
           },
-          body: JSON.stringify({ valores })
+          body: JSON.stringify(payload)
         });
-        if (res.status === 401) {
-          fecharFormulario();
-          terminarSessao();
-          return;
-        }
+        if (res.status === 401) { fecharFormulario(); terminarSessao(); return; }
         const data = await res.json();
 
         if (!res.ok) {
@@ -363,8 +480,241 @@
       }
     }
 
-    async function carregarDados() {
+    async function marcarComoPago(pageId) {
+      try {
+        const res = await fetch(`/api/notion?tab=${abaAtual}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "x-app-password": obterSenha()
+          },
+          body: JSON.stringify({ pageId, quickPaid: true })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.error || "Não foi possível atualizar o estado.");
+        } else {
+          carregarDados();
+        }
+      } catch (e) {
+        alert("Erro de rede ao atualizar registo.");
+      }
+    }
+
+    async function apagarRegisto(pageId, titulo) {
+      if (!confirm(`Tem a certeza que deseja remover "${titulo}"?`)) return;
+      try {
+        const res = await fetch(`/api/notion?tab=${abaAtual}&id=${pageId}`, {
+          method: "DELETE",
+          headers: { "x-app-password": obterSenha() }
+        });
+        if (res.ok) {
+          carregarDados();
+        } else {
+          const data = await res.json();
+          alert(data.error || "Erro ao remover registo.");
+        }
+      } catch (e) {
+        alert("Erro de rede ao remover registo.");
+      }
+    }
+
+    function filtrarPendentes() {
+      const sel = document.getElementById("filtroEstado");
+      for (const opt of sel.options) {
+        if (/pend|atras|vence|aberto/i.test(opt.value)) {
+          sel.value = opt.value;
+          break;
+        }
+      }
+      aplicarFiltros();
+    }
+
+    function popularFiltros(items) {
+      const selEstado = document.getElementById("filtroEstado");
+      const selMes = document.getElementById("filtroMes");
+      const estadoAtual = selEstado.value;
+      const mesAtual = selMes.value;
+
+      const estados = [...new Set(items.map(i => i.status).filter(Boolean))];
+      selEstado.innerHTML = `<option value="">Todos os estados</option>` +
+        estados.map(e => `<option value="${e}" ${e === estadoAtual ? "selected" : ""}>${e}</option>`).join("");
+
+      const meses = [...new Set(items.map(i => i.dataIso ? i.dataIso.slice(0, 7) : "").filter(Boolean))].sort().reverse();
+      selMes.innerHTML = `<option value="">Todos os meses</option>` +
+        meses.map(m => `<option value="${m}" ${m === mesAtual ? "selected" : ""}>${m}</option>`).join("");
+    }
+
+    function aplicarFiltros() {
+      const termo = document.getElementById("filtroTexto").value.toLowerCase().trim();
+      const estado = document.getElementById("filtroEstado").value;
+      const mes = document.getElementById("filtroMes").value;
+
+      itensFiltrados = itensBrutos.filter(item => {
+        if (estado && item.status !== estado) return false;
+        if (mes && (!item.dataIso || !item.dataIso.startsWith(mes))) return false;
+        if (termo) {
+          const textoCompleto = [item.titulo, item.status, item.categoria, ...item.colunas.map(c => c.valor)].join(" ").toLowerCase();
+          if (!textoCompleto.includes(termo)) return false;
+        }
+        return true;
+      });
+
+      atualizarResumoEGraficos(itensFiltrados);
+      renderizarLista(itensFiltrados);
+    }
+
+    function atualizarResumoEGraficos(items) {
+      let entradas = 0;
+      let saidas = 0;
+      const porCategoria = {};
+      const porEstado = {};
+
+      items.forEach(item => {
+        const valAbs = Math.abs(item.valorNumerico || 0);
+        if (item.tipoFluxo === "saida" || item.valorNumerico < 0) {
+          saidas += valAbs;
+        } else {
+          entradas += valAbs;
+        }
+
+        const cat = item.categoria || "Geral";
+        porCategoria[cat] = (porCategoria[cat] || 0) + (valAbs || 1);
+
+        const est = item.status || "Sem estado";
+        porEstado[est] = (porEstado[est] || 0) + (valAbs || 1);
+      });
+
+      const saldo = entradas - saidas;
+      document.getElementById("sumIn").textContent = entradas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      document.getElementById("sumOut").textContent = saidas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      document.getElementById("sumNet").textContent = saldo.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      document.getElementById("sumCount").textContent = items.length;
+
+      if (typeof Chart === "undefined") return;
+
+      const ctxCat = document.getElementById("chartCategorias");
+      const ctxEst = document.getElementById("chartEstados");
+      if (!ctxCat || !ctxEst) return;
+
+      if (chartCatInstance) chartCatInstance.destroy();
+      if (chartEstInstance) chartEstInstance.destroy();
+
+      chartCatInstance = new Chart(ctxCat, {
+        type: "doughnut",
+        data: {
+          labels: Object.keys(porCategoria),
+          datasets: [{
+            data: Object.values(porCategoria),
+            backgroundColor: ["#0071e3", "#34c759", "#ff9500", "#ff3b30", "#af52de", "#5ac8fa", "#8e8e93"]
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "right" } } }
+      });
+
+      chartEstInstance = new Chart(ctxEst, {
+        type: "bar",
+        data: {
+          labels: Object.keys(porEstado),
+          datasets: [{
+            label: "Total (€)",
+            data: Object.values(porEstado),
+            backgroundColor: "#0071e3",
+            borderRadius: 6
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+    }
+
+    function exportarCSV() {
+      if (!itensFiltrados.length) {
+        alert("Não há registos visíveis para exportar.");
+        return;
+      }
+      const cabecalhos = ["Título", "Estado", ...new Set(itensFiltrados.flatMap(i => i.colunas.map(c => c.nome)))];
+      const linhas = [cabecalhos.join(";")];
+
+      itensFiltrados.forEach(item => {
+        const mapa = { "Título": item.titulo, "Estado": item.status };
+        item.colunas.forEach(c => { mapa[c.nome] = c.valor; });
+        const linha = cabecalhos.map(h => `"${String(mapa[h] || "").replace(/"/g, '""')}"`).join(";");
+        linhas.push(linha);
+      });
+
+      const blob = new Blob(["\uFEFF" + linhas.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `gestao-${abaAtual}-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function renderizarLista(items) {
       const lista = document.getElementById("lista");
+      if (!items || items.length === 0) {
+        lista.innerHTML = "<p>Nenhum registo encontrado com os filtros atuais.</p>";
+        return;
+      }
+
+      lista.innerHTML = items.map((item, idx) => {
+        const isPending = /pend|atras|vence|aberto/i.test(item.status || "");
+        const isPaid = /pag|conclu|recebid|liquid/i.test(item.status || "");
+        const badgeClass = isPaid ? "badge paid" : (isPending ? "badge pending" : "badge");
+
+        // Barra de progresso automática na aba Orçamentos
+        let barraOrcamentoHtml = "";
+        if (abaAtual === "orcamentos") {
+          const colPrev = item.colunas.find(c => /prev|orçad|orcad|meta|limite/i.test(c.nome) && c.rawNum > 0);
+          const colReal = item.colunas.find(c => /real|gast|execut|atual/i.test(c.nome) && c.rawNum !== null);
+          if (colPrev && colReal) {
+            const pct = Math.round((colReal.rawNum / colPrev.rawNum) * 100);
+            const width = Math.min(pct, 100);
+            const fillClass = pct > 100 ? "budget-fill over" : (pct >= 80 ? "budget-fill warn" : "budget-fill");
+            barraOrcamentoHtml = `
+              <div class="budget-bar-wrap">
+                <div class="budget-bar-info">
+                  <span>Execução do Orçamento</span>
+                  <span>${pct}% (${colReal.valor} € / ${colPrev.valor} €)</span>
+                </div>
+                <div class="budget-track"><div class="${fillClass}" style="width:${width}%"></div></div>
+              </div>
+            `;
+          }
+        }
+
+        return `
+          <div class="card">
+            <div class="card-top">
+              <span class="card-title">${item.titulo}</span>
+              ${item.status ? `<span class="${badgeClass}">${item.status}</span>` : ""}
+            </div>
+            ${barraOrcamentoHtml}
+            ${item.colunas.length > 0 ? `
+              <div class="grid">
+                ${item.colunas.map(c => `
+                  <div>
+                    <span class="prop-label">${c.nome}</span>
+                    <span class="prop-val">${c.valor}</span>
+                  </div>
+                `).join("")}
+              </div>
+            ` : ""}
+            <div class="card-actions">
+              ${!isPaid ? `<button class="btn-mini pay" onclick="marcarComoPago('${item.id}')">✓ Marcar Pago</button>` : ""}
+              <button class="btn-mini" onclick='abrirFormulario(itensFiltrados[${idx}], false)'>✏️ Editar</button>
+              <button class="btn-mini" onclick='abrirFormulario(itensFiltrados[${idx}], true)'>📋 Duplicar</button>
+              <button class="btn-mini del" onclick="apagarRegisto('${item.id}', '${item.titulo.replace(/'/g, "\\'")}')">🗑 Remover</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function carregarDados(silencioso = false) {
+      const lista = document.getElementById("lista");
+      if (!silencioso) lista.innerHTML = "Carregando...";
 
       try {
         const res = await fetch(`/api/notion?tab=${abaAtual}`, {
@@ -377,13 +727,22 @@
         }
 
         const data = await res.json();
+        if (data.role) aplicarPermissoes(data.role);
 
         if (!res.ok) {
           lista.innerHTML = `<div class="erro">${data.error}</div>`;
           return;
         }
 
-        if (data.mode === "kpis") {
+        const isKpiMode = data.mode === "kpis";
+        document.getElementById("resumoExecutivo").style.display = isKpiMode ? "none" : "grid";
+        document.getElementById("barraFiltros").style.display = isKpiMode ? "none" : "flex";
+        document.getElementById("painelGraficos").style.display = (!isKpiMode && mostrarGraficos) ? "grid" : "none";
+        document.getElementById("btnChartsToggle").style.display = isKpiMode ? "none" : "inline-block";
+        document.getElementById("btnExport").style.display = isKpiMode ? "none" : "inline-block";
+
+        if (isKpiMode) {
+          document.getElementById("alertaVencimentos").style.display = "none";
           if (!data.kpis || data.kpis.length === 0) {
             lista.innerHTML = "<p>Nenhum indicador numérico encontrado em Saúde Financeira.</p>";
             return;
@@ -401,35 +760,25 @@
           return;
         }
 
-        if (!data.items || data.items.length === 0) {
-          lista.innerHTML = "<p>Nenhum registo encontrado nesta tabela.</p>";
-          return;
+        itensBrutos = data.items || [];
+
+        // Verificar pendentes para o banner de alerta
+        const pendentes = itensBrutos.filter(i => /pend|atras|vence|aberto/i.test(i.status || ""));
+        const alertaEl = document.getElementById("alertaVencimentos");
+        if (pendentes.length > 0) {
+          document.getElementById("textoAlerta").textContent = `⚠️ Atenção: Existem ${pendentes.length} lançamento(s) pendente(s) ou por liquidar nesta aba.`;
+          alertaEl.style.display = "flex";
+        } else {
+          alertaEl.style.display = "none";
         }
 
-        lista.innerHTML = data.items.map(item => `
-          <div class="card">
-            <div class="card-top">
-              <span class="card-title">${item.titulo}</span>
-              ${item.status ? `<span class="badge">${item.status}</span>` : ""}
-            </div>
-            ${item.colunas.length > 0 ? `
-              <div class="grid">
-                ${item.colunas.map(c => `
-                  <div>
-                    <span class="prop-label">${c.nome}</span>
-                    <span class="prop-val">${c.valor}</span>
-                  </div>
-                `).join("")}
-              </div>
-            ` : ""}
-          </div>
-        `).join("");
+        popularFiltros(itensBrutos);
+        aplicarFiltros();
       } catch (err) {
-        lista.innerHTML = `<div class="erro">Erro de rede ao carregar dados.</div>`;
+        if (!silencioso) lista.innerHTML = `<div class="erro">Erro de rede ao carregar dados.</div>`;
       }
     }
 
-    // Inicia verificando se já existe sessão guardada no dispositivo
     if (obterSenha()) {
       mostrarApp();
     } else {
