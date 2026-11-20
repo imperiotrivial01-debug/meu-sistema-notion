@@ -1,28 +1,90 @@
+import crypto from "crypto";
+
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
 
   const NOTION_TOKEN = process.env.NOTION_TOKEN;
+  const NOTION_USERS_ID = process.env.NOTION_USERS_ID;
   const APP_USER = process.env.APP_USER;
   const APP_PASSWORD = process.env.APP_PASSWORD;
-  const STAFF_USER = process.env.STAFF_USER;
-  const STAFF_PASSWORD = process.env.STAFF_PASSWORD;
 
-  // 1. AUTENTICAÇÃO COM UTILIZADOR + SENHA
-  let role = "admin";
-  if (APP_PASSWORD || STAFF_PASSWORD) {
-    const userRecebido = (req.headers["x-app-user"] || req.body?.username || "").trim().toLowerCase();
-    const senhaRecebida = req.headers["x-app-password"] || req.body?.password || "";
+  const headers = {
+    "Authorization": `Bearer ${NOTION_TOKEN}`,
+    "Notion-Version": "2022-06-28",
+    "Content-Type": "application/json"
+  };
 
-    const adminUserOk = !APP_USER || userRecebido === APP_USER.trim().toLowerCase();
-    const staffUserOk = !STAFF_USER || userRecebido === STAFF_USER.trim().toLowerCase();
+  // 0. DEFINIR SENHA NO PRIMEIRO ACESSO (?setup=1)
+  if (req.method === "POST" && req.query.setup === "1") {
+    try {
+      const { username, newPassword } = req.body || {};
+      const userClean = (username || "").trim().toLowerCase();
 
-    if (APP_PASSWORD && senhaRecebida === APP_PASSWORD && adminUserOk) {
-      role = "admin";
-    } else if (STAFF_PASSWORD && senhaRecebida === STAFF_PASSWORD && staffUserOk) {
-      role = "staff";
-    } else {
-      return res.status(401).json({ error: "Utilizador ou senha incorretos." });
+      if (!userClean || !newPassword || newPassword.length < 4) {
+        return res.status(400).json({ error: "Indique o utilizador autorizado e uma senha com pelo menos 4 caracteres." });
+      }
+      if (!NOTION_USERS_ID) {
+        return res.status(500).json({ error: "Tabela de Utilizadores (NOTION_USERS_ID) não configurada na Vercel." });
+      }
+
+      const userPage = await buscarUtilizadorNotion(NOTION_USERS_ID, userClean, headers);
+      if (!userPage) {
+        return res.status(404).json({ error: "Utilizador não encontrado. Peça ao administrador para adicionar o seu nome no Notion primeiro." });
+      }
+      if (userPage.senhaHash) {
+        return res.status(403).json({ error: "Este utilizador já definiu uma senha. Se esqueceu, peça ao administrador para limpar o campo Senha no Notion." });
+      }
+
+      const hash = hashSenha(newPassword);
+      const patchRes = await fetch(`https://api.notion.com/v1/pages/${userPage.id}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          properties: {
+            [userPage.colSenha]: { rich_text: [{ text: { content: hash } }] }
+          }
+        })
+      });
+
+      if (!patchRes.ok) {
+        return res.status(500).json({ error: "Erro ao guardar a nova senha no Notion." });
+      }
+
+      return res.status(200).json({ ok: true, role: userPage.role });
+    } catch (e) {
+      return res.status(500).json({ error: "Falha interna ao definir senha." });
     }
+  }
+
+  // 1. AUTENTICAÇÃO (VERIFICA CHAVE MESTRA DA VERCEL OU TABELA UTILIZADORES DO NOTION)
+  let role = "admin";
+  const userRecebido = (req.headers["x-app-user"] || req.body?.username || "").trim().toLowerCase();
+  const senhaRecebida = req.headers["x-app-password"] || req.body?.password || "";
+
+  let autenticado = false;
+
+  // Verifica primeiro a chave mestra da Vercel (se configurada)
+  if (APP_PASSWORD && senhaRecebida === APP_PASSWORD && (!APP_USER || userRecebido === APP_USER.trim().toLowerCase())) {
+    autenticado = true;
+    role = "admin";
+  }
+
+  // Se não entrou pela chave mestra, valida na tabela Utilizadores do Notion
+  if (!autenticado && NOTION_USERS_ID && userRecebido && senhaRecebida) {
+    const userPage = await buscarUtilizadorNotion(NOTION_USERS_ID, userRecebido, headers);
+    if (userPage) {
+      if (!userPage.senhaHash) {
+        return res.status(401).json({ error: "Primeiro acesso pendente: clique em 'Definir minha senha' abaixo." });
+      }
+      if (userPage.senhaHash === hashSenha(senhaRecebida)) {
+        autenticado = true;
+        role = userPage.role;
+      }
+    }
+  }
+
+  if (!autenticado && (APP_PASSWORD || NOTION_USERS_ID)) {
+    return res.status(401).json({ error: "Utilizador ou senha incorretos." });
   }
 
   if (req.query.auth === "1") {
@@ -45,12 +107,6 @@ export default async function handler(req, res) {
   if (!NOTION_TOKEN) {
     return res.status(500).json({ error: "NOTION_TOKEN não configurado na Vercel." });
   }
-
-  const headers = {
-    "Authorization": `Bearer ${NOTION_TOKEN}`,
-    "Notion-Version": "2022-06-28",
-    "Content-Type": "application/json"
-  };
 
   const TARGET_ID = databases[tab];
   if (!TARGET_ID) {
@@ -88,7 +144,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // 3. CRIAR NOVO REGISTO (POST) — INCLUI IMPORTAÇÃO DE FATURAS/FT DO E-MAIL COM PDF
+  // 3. CRIAR NOVO REGISTO (POST)
   if (req.method === "POST") {
     try {
       const { valores, fromEmailInvoice } = req.body;
@@ -103,8 +159,7 @@ export default async function handler(req, res) {
           if (colDef.type === "title") {
             mapped[colName] = fromEmailInvoice.descricao;
           } else if (colDef.type === "number" && !mapped._numSet) {
-            const valAbs = Math.abs(parseFloat(fromEmailInvoice.valor) || 0);
-            mapped[colName] = valAbs;
+            mapped[colName] = Math.abs(parseFloat(fromEmailInvoice.valor) || 0);
             mapped._numSet = true;
           } else if (colDef.type === "date" && !mapped._dateSet) {
             mapped[colName] = fromEmailInvoice.data || new Date().toISOString().split("T")[0];
@@ -115,7 +170,7 @@ export default async function handler(req, res) {
             mapped[colName] = match || fromEmailInvoice.estado;
           } else if ((colDef.type === "select" || colDef.type === "status") && /tipo|fluxo|natureza/i.test(colName)) {
             const opts = (colDef.status?.options || colDef.select?.options || []).map(o => o.name);
-            const alvoTipo = fromEmailInvoice.tipo === "entrada" ? /entrada|receita|crédito|credito/i : /saída|saida|despesa|débito|debito/i;
+            const alvoTipo = fromEmailInvoice.tipo === "entrada" ? /entrada|receita|crédito/i : /saída|saida|despesa|débito/i;
             const matchTipo = opts.find(o => alvoTipo.test(o));
             if (matchTipo) mapped[colName] = matchTipo;
           } else if (colDef.type === "rich_text" && /obs|nota|origem|detalhe|anexo|doc/i.test(colName)) {
@@ -220,7 +275,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // 6. SAÚDE FINANCEIRA COMPLETA (BUSCA TODOS OS REGISTOS PAGINADOS DO NOTION)
+  // 6. SAÚDE FINANCEIRA COMPLETA
   if (tab === "saude") {
     try {
       const [movRaw, folhaRaw] = await Promise.all([
@@ -279,7 +334,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // 7. LISTAR TODOS OS REGISTOS DA TABELA (COM PAGINAÇÃO COMPLETA PARA NÃO CORTAR SALÁRIOS/MOVIMENTOS)
+  // 7. LISTAR REGISTOS COM PAGINAÇÃO COMPLETA
   try {
     const todosResultados = await consultarTodosRegistosNotion(TARGET_ID, headers);
     const itensFormatados = formatarListaPaginas(todosResultados);
@@ -289,7 +344,44 @@ export default async function handler(req, res) {
   }
 }
 
-// Busca todas as páginas do Notion (ultrapassa o limite de 100 por página)
+function hashSenha(texto) {
+  return crypto.createHash("sha256").update(String(texto)).digest("hex");
+}
+
+async function buscarUtilizadorNotion(usersDbId, usernameLower, headers) {
+  const res = await fetch(`https://api.notion.com/v1/databases/${usersDbId}/query`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({})
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+
+  for (const page of (data.results || [])) {
+    let nomeUser = "";
+    let senhaHash = "";
+    let colSenha = "Senha";
+    let role = "staff";
+
+    for (const [colName, prop] of Object.entries(page.properties)) {
+      if (prop.type === "title") {
+        nomeUser = prop.title.map(t => t.plain_text).join("").trim().toLowerCase();
+      } else if (prop.type === "rich_text" && /senha|pass|chave/i.test(colName)) {
+        colSenha = colName;
+        senhaHash = prop.rich_text.map(t => t.plain_text).join("").trim();
+      } else if ((prop.type === "select" || prop.type === "status") && /perfil|role|acesso|tipo/i.test(colName)) {
+        const val = (prop.select?.name || prop.status?.name || "").toLowerCase();
+        if (/admin|total|s[oó]cio|gestor/i.test(val)) role = "admin";
+      }
+    }
+
+    if (nomeUser === usernameLower) {
+      return { id: page.id, nomeUser, senhaHash, colSenha, role };
+    }
+  }
+  return null;
+}
+
 async function consultarTodosRegistosNotion(databaseId, headers) {
   let allResults = [];
   let hasMore = true;
@@ -341,7 +433,6 @@ function formatarListaPaginas(results) {
         const valSel = prop.select.name;
         raw[nomeColuna] = valSel;
 
-        // Deteta se é Entrada ou Saída pelo nome da coluna ou pelo valor selecionado
         if (/tipo|fluxo|natureza|movimento|opera/i.test(nomeColuna) || /^(entrada|sa[ií]da|receita|despesa|cr[eé]dito|d[eé]bito)$/i.test(valSel.trim())) {
           if (/entrada|receita|cr[eé]dito|ganho|venda/i.test(valSel)) tipoFluxo = "entrada";
           if (/sa[ií]da|despesa|d[eé]bito|custo|gasto|pagamento|compra|imposto|sal[aá]rio/i.test(valSel)) tipoFluxo = "saida";
@@ -404,7 +495,6 @@ function formatarListaPaginas(results) {
       }
     }
 
-    // Fallback inteligente para Entrada vs Saída se não houver coluna explícita de Tipo
     if (!tipoFluxo) {
       if (valorNumerico < 0) {
         tipoFluxo = "saida";
@@ -413,7 +503,7 @@ function formatarListaPaginas(results) {
       } else if (/recebid|a receber|cliente|venda|receita|entrada|fatura cliente/i.test(`${titulo} ${categoria} ${status}`)) {
         tipoFluxo = "entrada";
       } else {
-        tipoFluxo = "saida"; // Por segurança contabilística, despesas sem sinal explícito não inflam entradas
+        tipoFluxo = "saida";
       }
     }
 
