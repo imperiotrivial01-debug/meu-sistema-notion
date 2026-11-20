@@ -9,9 +9,9 @@
   <style>
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; background: #f2f2f7; margin: 0; padding: 20px 16px; color: #1c1c1e; }
-    .container { max-width: 960px; margin: 0 auto; }
+    .container { max-width: 980px; margin: 0 auto; }
 
-    /* Login com Utilizador e Senha + Primeiro Acesso */
+    /* Login */
     .login-screen { max-width: 390px; margin: 65px auto; background: white; padding: 28px 24px; border-radius: 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); text-align: center; }
     .login-icon { width: 48px; height: 48px; background: #eef6ff; color: #0071e3; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px; font-weight: 700; }
     .login-screen h2 { margin: 0 0 6px 0; font-size: 20px; }
@@ -49,20 +49,22 @@
     .btn-inv-pend { background: #f29900; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
     .btn-inv-ign { background: #e5e5ea; color: #3a3a3c; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
 
-    /* Sub-abas e Filtros de Período */
+    /* Sub-abas e Filtros */
     .sub-tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
     .sub-tab { background: white; color: #3a3a3c; border: 1px solid #d1d1d6; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
     .sub-tab.active { background: #1c1c1e; color: white; border-color: #1c1c1e; }
 
-    /* Resumo Executivo */
+    /* Resumo Executivo (com IVA 23% separado) */
     .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 12px; margin-bottom: 16px; }
     .summary-card { background: white; padding: 14px 16px; border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
     .summary-card span { font-size: 11px; font-weight: 700; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 4px; }
     .summary-card strong { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
+    .summary-card small { display: block; font-size: 11px; color: #6e6e73; margin-top: 3px; }
     .val-in { color: #188038; }
     .val-out { color: #d93025; }
     .val-net { color: #0071e3; }
     .val-warn { color: #d97706; }
+    .val-iva { color: #5856d6; }
 
     /* Gráficos e Categorias Clicáveis */
     .charts-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px; margin-bottom: 16px; }
@@ -91,6 +93,7 @@
     .badge.paid { background: #e6f4ea; color: #188038; }
     .badge.in-flow { background: #e6f4ea; color: #188038; }
     .badge.out-flow { background: #fce8e6; color: #d93025; }
+    .badge.iva-tag { background: #efeffc; color: #5856d6; }
 
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; border-top: 1px solid #f2f2f7; padding-top: 12px; }
     .prop-label { color: #8e8e93; font-size: 11px; font-weight: 600; display: block; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
@@ -138,14 +141,13 @@
   </style>
 </head>
 <body>
-  <!-- Ecrã de Autenticação (Utilizador + Senha + Primeiro Acesso) -->
+  <!-- Ecrã de Autenticação -->
   <div id="loginBox" class="login-screen" style="display:none;">
     <div class="login-icon">🔒</div>
     <h2 id="loginTitle">Acesso Restrito</h2>
     <p id="loginDesc">Introduza o seu utilizador e senha para aceder ao portal financeiro</p>
     <div id="erroLogin" class="erro" style="display:none;"></div>
 
-    <!-- Formulário de Login Normal -->
     <form id="formLoginNormal" onsubmit="fazerLogin(event)">
       <input type="text" id="inputUser" class="login-input" placeholder="Utilizador" required autofocus>
       <input type="password" id="inputSenha" class="login-input" placeholder="Senha de acesso" required>
@@ -155,7 +157,6 @@
       </button>
     </form>
 
-    <!-- Formulário de Criação de Senha pelo Próprio Utilizador -->
     <form id="formPrimeiroAcesso" onsubmit="criarSenhaPrimeiroAcesso(event)" style="display:none;">
       <input type="text" id="setupUser" class="login-input" placeholder="O seu utilizador autorizado" required>
       <input type="password" id="setupPass1" class="login-input" placeholder="Crie a sua nova senha (mín. 4 caracteres)" required>
@@ -190,7 +191,7 @@
       <button class="tab" id="tab-saude" onclick="mudarAba('saude', this)">Saúde Financeira</button>
     </div>
 
-    <!-- Fila de Revisão de Faturas / FT do E-mail -->
+    <!-- Fila de Faturas / FT do E-mail -->
     <div id="filaFaturasEmail" class="email-queue" style="display:none;">
       <div class="email-queue-head">
         <h3>📧 Faturas (FT) detetadas nos últimos 10 dias — Confirme o estado:</h3>
@@ -213,10 +214,11 @@
 
     <!-- Sub-abas de FOLHA SALARIAL -->
     <div id="subTabsFolha" class="sub-tabs" style="display:none;">
-      <button class="sub-tab active" id="sub-folha-pendentes" onclick="mudarFiltroFolha('pendentes', this)">⏳ Por Pagar (Mês)</button>
-      <button class="sub-tab" id="sub-folha-pagos" onclick="mudarFiltroFolha('pagos', this)">✅ Pagos (Mês)</button>
-      <button class="sub-tab" id="sub-folha-todos" onclick="mudarFiltroFolha('todos', this)">📋 Todos do Mês</button>
+      <button class="sub-tab active" id="sub-folha-todos" onclick="mudarFiltroFolha('todos', this)">📋 Todos</button>
+      <button class="sub-tab" id="sub-folha-pendentes" onclick="mudarFiltroFolha('pendentes', this)">⏳ Por Pagar</button>
+      <button class="sub-tab" id="sub-folha-pagos" onclick="mudarFiltroFolha('pagos', this)">✅ Pagos</button>
       <input type="month" id="mesFolhaInput" style="padding:6px 10px; border-radius:10px; border:1px solid #d1d1d6; font-size:13px;" onchange="aplicarFiltros()">
+      <button class="sub-tab" onclick="document.getElementById('mesFolhaInput').value=''; aplicarFiltros();">Todos os Meses</button>
     </div>
 
     <!-- Sub-abas de SAÚDE FINANCEIRA -->
@@ -224,14 +226,16 @@
       <button class="sub-tab active" onclick="mudarPeriodoSaude('mensal', this)">📅 Relatório Mensal</button>
       <button class="sub-tab" onclick="mudarPeriodoSaude('trimestral', this)">📊 Relatório Trimestral</button>
       <button class="sub-tab" onclick="mudarPeriodoSaude('anual', this)">🏛️ Relatório Anual</button>
+      <button class="sub-tab" onclick="mudarPeriodoSaude('todos', this)">🌐 Acumulado Geral</button>
     </div>
 
-    <!-- Resumo Executivo -->
+    <!-- Resumo Executivo (com IVA 23% incluído nas Entradas) -->
     <div id="resumoExecutivo" class="summary-grid" style="display:none;">
-      <div class="summary-card"><span id="lblSum1">Entradas Realizadas</span><strong id="sumIn" class="val-in">0,00 €</strong></div>
-      <div class="summary-card"><span id="lblSum2">Saídas Realizadas</span><strong id="sumOut" class="val-out">0,00 €</strong></div>
-      <div class="summary-card"><span id="lblSum3">Saldo Pendente</span><strong id="sumPend" class="val-warn">0,00 €</strong></div>
-      <div class="summary-card"><span id="lblSum4">Previsão Atualizada</span><strong id="sumNet" class="val-net">0,00 €</strong></div>
+      <div class="summary-card"><span id="lblSum1">Entradas Realizadas</span><strong id="sumIn" class="val-in">0,00 €</strong><small id="subSum1"></small></div>
+      <div class="summary-card"><span id="lblSumIva">IVA Recebido (23%)</span><strong id="sumIva" class="val-iva">0,00 €</strong><small id="subSumIva">Extraído das entradas (÷ 1,23)</small></div>
+      <div class="summary-card"><span id="lblSum2">Saídas Realizadas</span><strong id="sumOut" class="val-out">0,00 €</strong><small id="subSum2"></small></div>
+      <div class="summary-card"><span id="lblSum3">Saldo Pendente</span><strong id="sumPend" class="val-warn">0,00 €</strong><small id="subSum3"></small></div>
+      <div class="summary-card"><span id="lblSum4">Previsão Atualizada</span><strong id="sumNet" class="val-net">0,00 €</strong><small id="subSum4"></small></div>
     </div>
 
     <!-- Gráficos e Categorias Clicáveis -->
@@ -268,7 +272,7 @@
     </div>
   </div>
 
-  <!-- Modal Dinâmico (Criar / Editar / Duplicar) -->
+  <!-- Modal Dinâmico -->
   <div class="modal-bg" id="modalNovo">
     <div class="modal">
       <h2 id="modalTitulo">Novo Registo</h2>
@@ -306,7 +310,7 @@
     let gavetaAberta = false;
     let periodoMovAtual = "mensal";
     let fluxoMovAtual = "todos";
-    let filtroFolhaAtual = "pendentes";
+    let filtroFolhaAtual = "todos";
     let periodoSaudeAtual = "mensal";
     let dadosSaudeCache = null;
     let faturasCache = {};
@@ -320,6 +324,18 @@
       orcamentos: { btn: "+ Novo Orçamento", titulo: "Novo Orçamento Mensal", sub: "Definir previsão e realizado por categoria" },
       saude: { btn: "", titulo: "", sub: "" }
     };
+
+    // Cálculo exato do IVA incluído a 23% (Total / 1.23 = Base; IVA = Total - Base)
+    function calcularIva23(valorTotalComIva) {
+      const total = Math.abs(valorTotalComIva || 0);
+      const baseSemIva = total / 1.23;
+      const iva = total - baseSemIva;
+      return { total, baseSemIva, iva };
+    }
+
+    function fmtEur(v) {
+      return Number(v || 0).toLocaleString("pt-PT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+    }
 
     function obterCredenciais() {
       return {
@@ -365,7 +381,7 @@
     function mostrarApp(role = "admin") {
       document.getElementById("loginBox").style.display = "none";
       document.getElementById("appBox").style.display = "block";
-      document.getElementById("mesFolhaInput").value = new Date().toISOString().slice(0, 7);
+      document.getElementById("mesFolhaInput").value = "";
       aplicarPermissoes(role);
       carregarDados();
       verificarCiclo10DiasEmail();
@@ -519,10 +535,12 @@
       box.style.display = "block";
       faturas.forEach(f => { faturasCache[f.uid] = f; });
 
-      lista.innerHTML = faturas.map(f => `
+      lista.innerHTML = faturas.map(f => {
+        const calc = calcularIva23(f.valor);
+        return `
         <div class="invoice-item" id="inv_row_${f.uid}">
           <div class="invoice-meta">
-            <strong>${f.descricao} — ${Number(f.valor || 0).toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</strong>
+            <strong>${f.descricao} — ${fmtEur(f.valor)} (IVA 23%: ${fmtEur(calc.iva)})</strong>
             <span>De: ${f.remetente} · Data: ${f.data} ${f.nomeArquivoPdf ? `· 📎 ${f.nomeArquivoPdf}` : ""}</span>
           </div>
           <div class="invoice-btns">
@@ -533,7 +551,7 @@
             <button class="btn-inv-ign" onclick="ignorarFaturaEmail('${f.uid}')">Ignorar</button>
           </div>
         </div>
-      `).join("");
+      `}).join("");
     }
 
     async function confirmarFaturaEmail(uid, estado, tipo) {
@@ -582,7 +600,7 @@
       }
     }
 
-    // --- FILTROS DE PERÍODO E NAVEGAÇÃO ---
+    // --- FILTROS E NAVEGAÇÃO ---
     function correspondeAoPeriodo(iso, periodo) {
       if (periodo === "todos" || !iso) return true;
       const d = new Date(iso);
@@ -646,13 +664,13 @@
       document.getElementById("setaGaveta").textContent = gavetaAberta ? "▲ Fechar" : "▼ Abrir";
     }
 
-    // --- DETALHES AO CLICAR NA CATEGORIA OU COLABORADOR ---
+    // --- DETALHES ---
     function abrirDetalhesCategoria(categoria) {
       const itensCat = itensBrutos.filter(i => i.categoria === categoria);
       const total = itensCat.reduce((acc, i) => acc + Math.abs(i.valorNumerico || 0), 0);
 
       document.getElementById("detalheTitulo").textContent = `Categoria: ${categoria}`;
-      document.getElementById("detalheSubtitulo").textContent = `${itensCat.length} lançamento(s) · Total acumulado: ${total.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €`;
+      document.getElementById("detalheSubtitulo").textContent = `${itensCat.length} lançamento(s) · Total acumulado: ${fmtEur(total)}`;
 
       document.getElementById("detalheConteudo").innerHTML = itensCat.map(item => `
         <div class="card" style="background:#f9f9fb; margin-bottom:8px;">
@@ -671,7 +689,7 @@
 
     function abrirDetalhesColaborador(item) {
       document.getElementById("detalheTitulo").textContent = `Colaborador: ${item.titulo}`;
-      document.getElementById("detalheSubtitulo").textContent = `Estado atual: ${item.status} · Referência: ${item.dataIso || "Mês corrente"}`;
+      document.getElementById("detalheSubtitulo").textContent = `Estado atual: ${item.status} · Referência: ${item.dataIso || "Sem data"}`;
 
       document.getElementById("detalheConteudo").innerHTML = `
         <div class="grid" style="border-top:none; padding-top:4px;">
@@ -868,7 +886,7 @@
       }
     }
 
-    // --- FILTRAGEM E SEPARAÇÃO POR ABA ---
+    // --- FILTRAGEM E SEPARAÇÃO ---
     function popularCategorias(items) {
       const sel = document.getElementById("filtroCategoriaSelect");
       const atual = sel.value;
@@ -899,9 +917,9 @@
         const pendentesFolha = doMes.filter(i => !i.isSettled);
         const pagosFolha = doMes.filter(i => i.isSettled);
 
+        document.getElementById("sub-folha-todos").textContent = `📋 Todos (${doMes.length})`;
         document.getElementById("sub-folha-pendentes").textContent = `⏳ Por Pagar (${pendentesFolha.length})`;
         document.getElementById("sub-folha-pagos").textContent = `✅ Pagos (${pagosFolha.length})`;
-        document.getElementById("sub-folha-todos").textContent = `📋 Todos do Mês (${doMes.length})`;
 
         let listaAtiva = doMes;
         if (filtroFolhaAtual === "pendentes") listaAtiva = pendentesFolha;
@@ -955,6 +973,13 @@
         ? `<span class="badge ${item.tipoFluxo === "entrada" ? "in-flow" : "out-flow"}">${item.tipoFluxo === "entrada" ? "↑ Entrada" : "↓ Saída"}</span>`
         : "";
 
+      // Mostra etiqueta do IVA 23% incluído em cada fatura de entrada
+      let ivaBadge = "";
+      if (!isColaborador && item.tipoFluxo === "entrada" && item.valorNumerico > 0) {
+        const calc = calcularIva23(item.valorNumerico);
+        ivaBadge = `<span class="badge iva-tag">IVA 23%: ${fmtEur(calc.iva)} · Base: ${fmtEur(calc.baseSemIva)}</span>`;
+      }
+
       let barraOrcamentoHtml = "";
       if (abaAtual === "orcamentos") {
         const colPrev = item.colunas.find(c => /prev|orçad|orcad|meta|limite/i.test(c.nome) && c.rawNum > 0);
@@ -980,6 +1005,7 @@
             </span>
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
               ${flowBadge}
+              ${ivaBadge}
               <span class="cat-pill" onclick='abrirDetalhesCategoria("${item.categoria}")'>${item.categoria}</span>
               <span class="${badgeClass}">${item.status}</span>
             </div>
@@ -1027,26 +1053,51 @@
       const saldoPendente = aReceberPend - aPagarPend;
       const previsaoAtual = (entRealizadas - saiRealizadas) + saldoPendente;
 
-      document.getElementById("lblSum1").textContent = isFolha ? "Total Colaboradores" : "Entradas Realizadas";
-      document.getElementById("lblSum2").textContent = isFolha ? "Salários Pagos" : "Saídas Realizadas";
-      document.getElementById("lblSum3").textContent = isFolha ? "Salários Por Pagar" : "Pendentes (Receber - Pagar)";
-      document.getElementById("lblSum4").textContent = isFolha ? "Custo Total Folha" : "Previsão Atualizada";
-
+      const cardIvaEl = document.getElementById("sumIva").parentElement;
       if (isFolha) {
+        cardIvaEl.style.display = "none";
+        document.getElementById("lblSum1").textContent = "Total Colaboradores";
+        document.getElementById("subSum1").textContent = "";
+        document.getElementById("lblSum2").textContent = "Salários Pagos";
+        document.getElementById("subSum2").textContent = "";
+        document.getElementById("lblSum3").textContent = "Salários Por Pagar";
+        document.getElementById("subSum3").textContent = "";
+        document.getElementById("lblSum4").textContent = "Custo Total Folha";
+        document.getElementById("subSum4").textContent = "";
+
         document.getElementById("sumIn").textContent = items.length + " colab.";
-        document.getElementById("sumOut").textContent = saiRealizadas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
-        document.getElementById("sumPend").textContent = aPagarPend.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
-        document.getElementById("sumNet").textContent = (saiRealizadas + aPagarPend).toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+        document.getElementById("sumOut").textContent = fmtEur(saiRealizadas);
+        document.getElementById("sumPend").textContent = fmtEur(aPagarPend);
+        document.getElementById("sumNet").textContent = fmtEur(saiRealizadas + aPagarPend);
       } else {
-        document.getElementById("sumIn").textContent = entRealizadas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
-        document.getElementById("sumOut").textContent = saiRealizadas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
-        document.getElementById("sumPend").textContent = saldoPendente.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
-        document.getElementById("sumNet").textContent = previsaoAtual.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+        cardIvaEl.style.display = "block";
+        const ivaRealizado = calcularIva23(entRealizadas);
+        const ivaPendente = calcularIva23(aReceberPend);
+
+        document.getElementById("lblSum1").textContent = "Entradas Realizadas (c/ IVA)";
+        document.getElementById("sumIn").textContent = fmtEur(entRealizadas);
+        document.getElementById("subSum1").textContent = `Base s/ IVA: ${fmtEur(ivaRealizado.baseSemIva)}`;
+
+        document.getElementById("lblSumIva").textContent = "IVA Recebido (23%)";
+        document.getElementById("sumIva").textContent = fmtEur(ivaRealizado.iva);
+        document.getElementById("subSumIva").textContent = `A receber (pend.): ${fmtEur(ivaPendente.iva)}`;
+
+        document.getElementById("lblSum2").textContent = "Saídas Realizadas";
+        document.getElementById("sumOut").textContent = fmtEur(saiRealizadas);
+        document.getElementById("subSum2").textContent = "";
+
+        document.getElementById("lblSum3").textContent = "Pendentes (Receber - Pagar)";
+        document.getElementById("sumPend").textContent = fmtEur(saldoPendente);
+        document.getElementById("subSum3").textContent = `A receber: ${fmtEur(aReceberPend)}`;
+
+        document.getElementById("lblSum4").textContent = "Previsão Atualizada";
+        document.getElementById("sumNet").textContent = fmtEur(previsaoAtual);
+        document.getElementById("subSum4").textContent = "";
       }
 
       const catsKeys = Object.keys(porCategoria);
       document.getElementById("pilsCategorias").innerHTML = catsKeys.map(c =>
-        `<button class="cat-pill" onclick='abrirDetalhesCategoria("${c}")'>🔍 ${c} (${porCategoria[c].toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €)</button>`
+        `<button class="cat-pill" onclick='abrirDetalhesCategoria("${c}")'>🔍 ${c} (${fmtEur(porCategoria[c])})</button>`
       ).join("");
 
       if (typeof Chart === "undefined") return;
@@ -1091,7 +1142,7 @@
       });
     }
 
-    // --- SAÚDE FINANCEIRA ---
+    // --- SAÚDE FINANCEIRA (COM IVA 23% SEPARADO E TODOS OS SALÁRIOS INCLUÍDOS) ---
     function renderizarSaudeFinanceira(data) {
       dadosSaudeCache = data;
 
@@ -1120,38 +1171,57 @@
         else saidasPagar += v;
       });
 
+      const ivaRecebidoCalc = calcularIva23(entradasPagas);
+      const ivaAReceberCalc = calcularIva23(entradasReceber);
       const saldoRealizado = entradasPagas - saidasPagas;
       const previsaoAtualizada = saldoRealizado + entradasReceber - saidasPagar;
+      const lucroLiquidoSemIva = ivaRecebidoCalc.baseSemIva - saidasPagas;
 
       document.getElementById("resumoExecutivo").style.display = "grid";
-      document.getElementById("lblSum1").textContent = "Entradas Realizadas";
-      document.getElementById("lblSum2").textContent = "Saídas Realizadas (c/ Salários)";
-      document.getElementById("lblSum3").textContent = "Pendentes (Receber - Pagar)";
-      document.getElementById("lblSum4").textContent = "Previsão Final Atualizada";
+      document.getElementById("sumIva").parentElement.style.display = "block";
 
-      document.getElementById("sumIn").textContent = entradasPagas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
-      document.getElementById("sumOut").textContent = saidasPagas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
-      document.getElementById("sumPend").textContent = (entradasReceber - saidasPagar).toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
-      document.getElementById("sumNet").textContent = previsaoAtualizada.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      document.getElementById("lblSum1").textContent = "Entradas Realizadas (c/ IVA)";
+      document.getElementById("sumIn").textContent = fmtEur(entradasPagas);
+      document.getElementById("subSum1").textContent = `Base líquida s/ IVA: ${fmtEur(ivaRecebidoCalc.baseSemIva)}`;
+
+      document.getElementById("lblSumIva").textContent = "IVA Recebido (23%)";
+      document.getElementById("sumIva").textContent = fmtEur(ivaRecebidoCalc.iva);
+      document.getElementById("subSumIva").textContent = `IVA a receber (pend.): ${fmtEur(ivaAReceberCalc.iva)}`;
+
+      document.getElementById("lblSum2").textContent = "Saídas Realizadas (c/ Salários)";
+      document.getElementById("sumOut").textContent = fmtEur(saidasPagas);
+      document.getElementById("subSum2").textContent = `${salPeriodo.length} colaborador(es) na folha`;
+
+      document.getElementById("lblSum3").textContent = "Pendentes (Receber - Pagar)";
+      document.getElementById("sumPend").textContent = fmtEur(entradasReceber - saidasPagar);
+      document.getElementById("subSum3").textContent = `A receber: ${fmtEur(entradasReceber)}`;
+
+      document.getElementById("lblSum4").textContent = "Previsão Final Atualizada";
+      document.getElementById("sumNet").textContent = fmtEur(previsaoAtualizada);
+      document.getElementById("subSum4").textContent = "";
 
       const agora = new Date();
-      const nomePeriodo = periodoSaudeAtual === "anual"
-        ? `Ano ${agora.getFullYear()}`
-        : (periodoSaudeAtual === "trimestral" ? `${Math.floor(agora.getMonth() / 3) + 1}º Trimestre de ${agora.getFullYear()}` : `${String(agora.getMonth() + 1).padStart(2, "0")}/${agora.getFullYear()}`);
+      const nomePeriodo = periodoSaudeAtual === "todos"
+        ? "Acumulado Geral"
+        : (periodoSaudeAtual === "anual"
+          ? `Ano ${agora.getFullYear()}`
+          : (periodoSaudeAtual === "trimestral" ? `${Math.floor(agora.getMonth() / 3) + 1}º Trimestre de ${agora.getFullYear()}` : `${String(agora.getMonth() + 1).padStart(2, "0")}/${agora.getFullYear()}`));
 
       document.getElementById("lista").innerHTML = `
         <div class="card">
           <div class="card-top">
-            <span class="card-title">Demonstrativo Consolidado — ${nomePeriodo}</span>
+            <span class="card-title">Demonstrativo Consolidado e Apuramento de IVA — ${nomePeriodo}</span>
             <span class="badge ${previsaoAtualizada >= 0 ? "paid" : "pending"}">${previsaoAtualizada >= 0 ? "Superávit Previsto" : "Atenção ao Fluxo"}</span>
           </div>
           <div class="grid">
-            <div><span class="prop-label">Entradas já Recebidas</span><span class="prop-val val-in">+ ${entradasPagas.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
-            <div><span class="prop-label">Entradas a Receber</span><span class="prop-val">+ ${entradasReceber.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
-            <div><span class="prop-label">Saídas e Salários Pagos</span><span class="prop-val val-out">- ${saidasPagas.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
-            <div><span class="prop-label">Contas e Salários a Pagar</span><span class="prop-val val-warn">- ${saidasPagar.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
-            <div><span class="prop-label">Caixa Atual (Realizado)</span><span class="prop-val">${saldoRealizado.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
-            <div><span class="prop-label">Previsão Atualizada</span><span class="prop-val val-net">${previsaoAtualizada.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</span></div>
+            <div><span class="prop-label">Entradas Recebidas (Bruto)</span><span class="prop-val val-in">+ ${fmtEur(entradasPagas)}</span></div>
+            <div><span class="prop-label">Receita Líquida (Sem IVA)</span><span class="prop-val">+ ${fmtEur(ivaRecebidoCalc.baseSemIva)}</span></div>
+            <div><span class="prop-label">IVA Recebido (23% incluído)</span><span class="prop-val val-iva">${fmtEur(ivaRecebidoCalc.iva)}</span></div>
+            <div><span class="prop-label">IVA a Receber (Faturas Pend.)</span><span class="prop-val val-iva">${fmtEur(ivaAReceberCalc.iva)}</span></div>
+            <div><span class="prop-label">Saídas e Salários Pagos</span><span class="prop-val val-out">- ${fmtEur(saidasPagas)}</span></div>
+            <div><span class="prop-label">Contas e Salários a Pagar</span><span class="prop-val val-warn">- ${fmtEur(saidasPagar)}</span></div>
+            <div><span class="prop-label">Resultado Realizado (s/ IVA)</span><span class="prop-val">${fmtEur(lucroLiquidoSemIva)}</span></div>
+            <div><span class="prop-label">Previsão Atualizada (Caixa)</span><span class="prop-val val-net">${fmtEur(previsaoAtualizada)}</span></div>
           </div>
         </div>
         ${(data.kpis && data.kpis.length > 0) ? `
@@ -1168,11 +1238,19 @@
         alert("Não há registos visíveis para exportar.");
         return;
       }
-      const cabecalhos = ["Título", "Fluxo", "Categoria", "Estado", ...new Set(itensVisiveisExport.flatMap(i => i.colunas.map(c => c.nome)))];
+      const cabecalhos = ["Título", "Fluxo", "Categoria", "Estado", "Base Sem IVA (€)", "IVA 23% (€)", ...new Set(itensVisiveisExport.flatMap(i => i.colunas.map(c => c.nome)))];
       const linhas = [cabecalhos.join(";")];
 
       itensVisiveisExport.forEach(item => {
-        const mapa = { "Título": item.titulo, "Fluxo": item.tipoFluxo, "Categoria": item.categoria, "Estado": item.status };
+        const calcIva = item.tipoFluxo === "entrada" ? calcularIva23(item.valorNumerico) : { baseSemIva: item.valorNumerico, iva: 0 };
+        const mapa = {
+          "Título": item.titulo,
+          "Fluxo": item.tipoFluxo,
+          "Categoria": item.categoria,
+          "Estado": item.status,
+          "Base Sem IVA (€)": calcIva.baseSemIva.toFixed(2).replace(".", ","),
+          "IVA 23% (€)": calcIva.iva.toFixed(2).replace(".", ",")
+        };
         item.colunas.forEach(c => { mapa[c.nome] = c.valor; });
         linhas.push(cabecalhos.map(h => `"${String(mapa[h] || "").replace(/"/g, '""')}"`).join(";"));
       });
