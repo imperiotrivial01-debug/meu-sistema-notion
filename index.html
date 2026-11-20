@@ -9,16 +9,16 @@
   <style>
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; background: #f2f2f7; margin: 0; padding: 20px 16px; color: #1c1c1e; }
-    .container { max-width: 940px; margin: 0 auto; }
+    .container { max-width: 960px; margin: 0 auto; }
 
-    /* Login */
-    .login-screen { max-width: 380px; margin: 70px auto; background: white; padding: 28px 24px; border-radius: 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); text-align: center; }
+    /* Login com Utilizador e Senha */
+    .login-screen { max-width: 390px; margin: 65px auto; background: white; padding: 28px 24px; border-radius: 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); text-align: center; }
     .login-icon { width: 48px; height: 48px; background: #eef6ff; color: #0071e3; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px; font-weight: 700; }
     .login-screen h2 { margin: 0 0 6px 0; font-size: 20px; }
     .login-screen p { margin: 0 0 20px 0; font-size: 13px; color: #6e6e73; }
-    .login-input { width: 100%; padding: 12px 14px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 16px; margin-bottom: 12px; background: #fafafa; }
+    .login-input { width: 100%; padding: 12px 14px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 15px; margin-bottom: 10px; background: #fafafa; }
     .login-input:focus { outline: none; border-color: #0071e3; background: white; }
-    .login-btn { width: 100%; background: #0071e3; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 600; font-size: 15px; cursor: pointer; }
+    .login-btn { width: 100%; background: #0071e3; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 4px; }
 
     /* Cabeçalho */
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap; }
@@ -30,24 +30,25 @@
     .btn-sec:hover { background: #f8f8fa; }
     .btn-logout { background: white; color: #6e6e73; border: 1px solid #d1d1d6; padding: 9px 12px; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; }
 
-    .tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
     .tab { background: #e5e5ea; color: #3a3a3c; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap; }
     .tab.active { background: #0071e3; color: white; box-shadow: 0 2px 8px rgba(0,113,227,0.25); }
 
-    /* Fila de Faturas do E-mail (Ciclo 10 dias) */
+    /* Fila de Faturas / FT do E-mail */
     .email-queue { background: #eef6ff; border: 1px solid #b8daff; border-radius: 14px; padding: 16px; margin-bottom: 18px; }
     .email-queue-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
     .email-queue-head h3 { margin: 0; font-size: 15px; color: #004085; }
     .invoice-item { background: white; border-radius: 10px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; border: 1px solid #d6e9ff; }
     .invoice-meta strong { display: block; font-size: 14px; color: #1c1c1e; }
-    .invoice-meta span { font-size: 12px; color: #6e6e73; }
+    .invoice-meta span { font-size: 12px; color: #6e6e73; display: block; }
     .invoice-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-inv-pdf { background: #5856d6; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
     .btn-inv-paid { background: #188038; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
     .btn-inv-rec { background: #0071e3; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
     .btn-inv-pend { background: #f29900; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
     .btn-inv-ign { background: #e5e5ea; color: #3a3a3c; border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
 
-    /* Sub-abas (Salários: Por Pagar / Pagos / Todos e Saúde: Mensal / Trimestral / Anual) */
+    /* Sub-abas e Filtros de Período */
     .sub-tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
     .sub-tab { background: white; color: #3a3a3c; border: 1px solid #d1d1d6; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
     .sub-tab.active { background: #1c1c1e; color: white; border-color: #1c1c1e; }
@@ -62,23 +63,22 @@
     .val-net { color: #0071e3; }
     .val-warn { color: #d97706; }
 
-    /* Gráficos e Pílulas de Categoria Clicáveis */
+    /* Gráficos e Categorias Clicáveis */
     .charts-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px; margin-bottom: 16px; }
     .chart-box { background: white; padding: 16px; border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
     .chart-box h3 { margin: 0 0 8px 0; font-size: 12px; color: #6e6e73; text-transform: uppercase; letter-spacing: 0.3px; }
     .chart-canvas-holder { position: relative; height: 200px; width: 100%; }
     .cat-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
     .cat-pill { background: #f2f2f7; border: 1px solid #e5e5ea; color: #1c1c1e; padding: 5px 10px; border-radius: 14px; font-size: 12px; font-weight: 600; cursor: pointer; }
-    .cat-pill.active, .cat-pill:hover { background: #0071e3; color: white; border-color: #0071e3; }
+    .cat-pill:hover { background: #0071e3; color: white; border-color: #0071e3; }
 
-    /* Barra de Filtros */
+    /* Barra de Pesquisa */
     .filters-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
     .filters-bar input, .filters-bar select { padding: 9px 12px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 13px; background: white; color: #1c1c1e; }
     .filters-bar input { flex: 1; min-width: 180px; }
 
     /* Gaveta Recolhível de Pagos / Recebidos */
     .settled-drawer-btn { width: 100%; background: white; border: 1px solid #d1d1d6; color: #1c1c1e; padding: 13px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-top: 16px; margin-bottom: 12px; }
-    .settled-drawer-btn:hover { background: #f8f8fa; }
 
     /* Cartões */
     .card { background: white; padding: 16px 18px; border-radius: 14px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.03); }
@@ -88,6 +88,8 @@
     .badge { background: #eef6ff; color: #0071e3; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; white-space: nowrap; }
     .badge.pending { background: #fff3cd; color: #856404; }
     .badge.paid { background: #e6f4ea; color: #188038; }
+    .badge.in-flow { background: #e6f4ea; color: #188038; }
+    .badge.out-flow { background: #fce8e6; color: #d93025; }
 
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; border-top: 1px solid #f2f2f7; padding-top: 12px; }
     .prop-label { color: #8e8e93; font-size: 11px; font-weight: 600; display: block; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
@@ -135,14 +137,15 @@
   </style>
 </head>
 <body>
-  <!-- Ecrã de Autenticação -->
+  <!-- Ecrã de Autenticação (Utilizador + Senha) -->
   <div id="loginBox" class="login-screen" style="display:none;">
     <div class="login-icon">🔒</div>
     <h2>Acesso Restrito</h2>
-    <p>Introduza a senha do portal financeiro para continuar</p>
+    <p>Introduza o seu utilizador e senha para aceder ao portal financeiro</p>
     <div id="erroLogin" class="erro" style="display:none;"></div>
     <form onsubmit="fazerLogin(event)">
-      <input type="password" id="inputSenha" class="login-input" placeholder="Senha de acesso" required autofocus>
+      <input type="text" id="inputUser" class="login-input" placeholder="Utilizador" required autofocus>
+      <input type="password" id="inputSenha" class="login-input" placeholder="Senha de acesso" required>
       <button type="submit" id="btnEntrar" class="login-btn">Entrar no Portal</button>
     </form>
   </div>
@@ -152,9 +155,10 @@
     <header>
       <div class="brand">
         <h1>Gestão Financeira</h1>
-        <span>Sincronizado em tempo real com Notion</span>
+        <span id="statusSync">Sincronizado em tempo real com Notion</span>
       </div>
       <div class="header-actions">
+        <button class="btn-sec" onclick="carregarDados(false)">🔄 Sincronizar</button>
         <button class="btn-sec" id="btnScanEmail" onclick="verificarFaturasEmail(true)">📧 Faturas E-mail</button>
         <button class="btn-sec" id="btnExport" onclick="exportarCSV()">📥 CSV</button>
         <button class="btn-new" id="btnNovo" onclick="abrirFormulario()">+ Novo Movimento</button>
@@ -169,16 +173,28 @@
       <button class="tab" id="tab-saude" onclick="mudarAba('saude', this)">Saúde Financeira</button>
     </div>
 
-    <!-- Fila de Revisão de Faturas do E-mail (Ciclo 10 dias) -->
+    <!-- Fila de Revisão de Faturas / FT do E-mail -->
     <div id="filaFaturasEmail" class="email-queue" style="display:none;">
       <div class="email-queue-head">
-        <h3 id="tituloFilaEmail">📧 Faturas detetadas nos últimos 10 dias — Confirme o estado:</h3>
+        <h3>📧 Faturas (FT) detetadas nos últimos 10 dias — Confirme o estado:</h3>
         <button class="btn-inv-ign" onclick="document.getElementById('filaFaturasEmail').style.display='none'">Fechar aviso</button>
       </div>
       <div id="listaFaturasEmail"></div>
     </div>
 
-    <!-- Sub-abas de Folha Salarial (Por Pagar / Pagos / Todos) -->
+    <!-- Sub-abas de MOVIMENTOS (Período: Mensal / Trimestral / Anual / Todos + Fluxo: Todos / Entradas / Saídas) -->
+    <div id="subTabsMovimentos" class="sub-tabs" style="display:none;">
+      <button class="sub-tab active" onclick="mudarPeriodoMov('mensal', this)">📅 Mensal</button>
+      <button class="sub-tab" onclick="mudarPeriodoMov('trimestral', this)">📊 Trimestral</button>
+      <button class="sub-tab" onclick="mudarPeriodoMov('anual', this)">🏛️ Anual</button>
+      <button class="sub-tab" onclick="mudarPeriodoMov('todos', this)">🌐 Todos</button>
+      <span style="color:#d1d1d6;">|</span>
+      <button class="sub-tab active" id="fluxo-todos" onclick="mudarFluxoMov('todos', this)">Todos os Fluxos</button>
+      <button class="sub-tab" id="fluxo-entrada" onclick="mudarFluxoMov('entrada', this)">🟢 Só Entradas</button>
+      <button class="sub-tab" id="fluxo-saida" onclick="mudarFluxoMov('saida', this)">🔴 Só Saídas</button>
+    </div>
+
+    <!-- Sub-abas de FOLHA SALARIAL -->
     <div id="subTabsFolha" class="sub-tabs" style="display:none;">
       <button class="sub-tab active" id="sub-folha-pendentes" onclick="mudarFiltroFolha('pendentes', this)">⏳ Por Pagar (Mês)</button>
       <button class="sub-tab" id="sub-folha-pagos" onclick="mudarFiltroFolha('pagos', this)">✅ Pagos (Mês)</button>
@@ -186,18 +202,18 @@
       <input type="month" id="mesFolhaInput" style="padding:6px 10px; border-radius:10px; border:1px solid #d1d1d6; font-size:13px;" onchange="aplicarFiltros()">
     </div>
 
-    <!-- Sub-abas de Saúde Financeira (Mensal / Trimestral / Anual) -->
+    <!-- Sub-abas de SAÚDE FINANCEIRA -->
     <div id="subTabsSaude" class="sub-tabs" style="display:none;">
-      <button class="sub-tab active" id="sub-saude-mensal" onclick="mudarPeriodoSaude('mensal', this)">📅 Relatório Mensal</button>
-      <button class="sub-tab" id="sub-saude-trimestral" onclick="mudarPeriodoSaude('trimestral', this)">📊 Relatório Trimestral</button>
-      <button class="sub-tab" id="sub-saude-anual" onclick="mudarPeriodoSaude('anual', this)">🏛️ Relatório Anual</button>
+      <button class="sub-tab active" onclick="mudarPeriodoSaude('mensal', this)">📅 Relatório Mensal</button>
+      <button class="sub-tab" onclick="mudarPeriodoSaude('trimestral', this)">📊 Relatório Trimestral</button>
+      <button class="sub-tab" onclick="mudarPeriodoSaude('anual', this)">🏛️ Relatório Anual</button>
     </div>
 
     <!-- Resumo Executivo -->
     <div id="resumoExecutivo" class="summary-grid" style="display:none;">
       <div class="summary-card"><span id="lblSum1">Entradas Realizadas</span><strong id="sumIn" class="val-in">0,00 €</strong></div>
       <div class="summary-card"><span id="lblSum2">Saídas Realizadas</span><strong id="sumOut" class="val-out">0,00 €</strong></div>
-      <div class="summary-card"><span id="lblSum3">Pendentes (Aberto)</span><strong id="sumPend" class="val-warn">0,00 €</strong></div>
+      <div class="summary-card"><span id="lblSum3">Saldo Pendente</span><strong id="sumPend" class="val-warn">0,00 €</strong></div>
       <div class="summary-card"><span id="lblSum4">Previsão Atualizada</span><strong id="sumNet" class="val-net">0,00 €</strong></div>
     </div>
 
@@ -209,7 +225,7 @@
         <div id="pilsCategorias" class="cat-pills"></div>
       </div>
       <div class="chart-box">
-        <h3 id="tituloGrafico2">Comparativo Financeiro</h3>
+        <h3>Entradas vs. Saídas no Período</h3>
         <div class="chart-canvas-holder"><canvas id="chartEstados"></canvas></div>
       </div>
     </div>
@@ -222,7 +238,7 @@
       </select>
     </div>
 
-    <!-- Área Principal de Conteúdo -->
+    <!-- Área Principal -->
     <div id="lista">Carregando...</div>
 
     <!-- Gaveta Recolhível de Pagos / Recebidos (Movimentos) -->
@@ -251,7 +267,7 @@
     </div>
   </div>
 
-  <!-- Modal de Detalhes (Categoria ou Colaborador) -->
+  <!-- Modal de Detalhes -->
   <div class="modal-bg" id="modalDetalhes">
     <div class="modal">
       <h2 id="detalheTitulo">Detalhes</h2>
@@ -270,11 +286,13 @@
     let itensVisiveisExport = [];
     let editandoPageId = null;
 
-    // Estados específicos de visualização
     let gavetaAberta = false;
-    let filtroFolhaAtual = "pendentes"; // "pendentes" | "pagos" | "todos"
-    let periodoSaudeAtual = "mensal";   // "mensal" | "trimestral" | "anual"
+    let periodoMovAtual = "mensal";  // "mensal" | "trimestral" | "anual" | "todos"
+    let fluxoMovAtual = "todos";     // "todos" | "entrada" | "saida"
+    let filtroFolhaAtual = "pendentes";
+    let periodoSaudeAtual = "mensal";
     let dadosSaudeCache = null;
+    let faturasCache = {};
 
     let chartCatInstance = null;
     let chartEstInstance = null;
@@ -286,7 +304,16 @@
       saude: { btn: "", titulo: "", sub: "" }
     };
 
-    function obterSenha() { return localStorage.getItem("portal_financeiro_pass") || ""; }
+    function obterCredenciais() {
+      return {
+        "x-app-user": localStorage.getItem("portal_financeiro_user") || "",
+        "x-app-password": localStorage.getItem("portal_financeiro_pass") || ""
+      };
+    }
+
+    function temSessao() {
+      return Boolean(localStorage.getItem("portal_financeiro_pass"));
+    }
 
     function aplicarPermissoes(role) {
       ["tab-folha", "tab-orcamentos", "tab-saude"].forEach(id => {
@@ -321,11 +348,12 @@
         if (!document.getElementById("modalNovo").classList.contains("open")) {
           carregarDados(true);
         }
-      }, 30000);
+      }, 20000);
     }
 
     async function fazerLogin(e) {
       e.preventDefault();
+      const user = document.getElementById("inputUser").value.trim();
       const senha = document.getElementById("inputSenha").value;
       const btn = document.getElementById("btnEntrar");
       const erroEl = document.getElementById("erroLogin");
@@ -334,14 +362,17 @@
       erroEl.style.display = "none";
 
       try {
-        const res = await fetch("/api/notion?auth=1", { headers: { "x-app-password": senha } });
+        const res = await fetch("/api/notion?auth=1", {
+          headers: { "x-app-user": user, "x-app-password": senha }
+        });
         const data = await res.json();
         if (res.ok) {
+          localStorage.setItem("portal_financeiro_user", user);
           localStorage.setItem("portal_financeiro_pass", senha);
           document.getElementById("inputSenha").value = "";
           mostrarApp(data.role || "admin");
         } else {
-          erroEl.textContent = data.error || "Senha incorreta.";
+          erroEl.textContent = data.error || "Utilizador ou senha incorretos.";
           erroEl.style.display = "block";
         }
       } catch (err) {
@@ -354,11 +385,12 @@
     }
 
     function terminarSessao() {
+      localStorage.removeItem("portal_financeiro_user");
       localStorage.removeItem("portal_financeiro_pass");
       mostrarLogin();
     }
 
-    // --- AUTOMAÇÃO DE FATURAS NO E-MAIL (CICLO DE 10 DIAS) ---
+    // --- LEITURA DE FATURAS / FT E PDF NO E-MAIL ---
     function verificarCiclo10DiasEmail() {
       const ultimaVerif = parseInt(localStorage.getItem("ultimo_scan_email_ts") || "0", 10);
       const dezDiasMs = 10 * 24 * 60 * 60 * 1000;
@@ -371,13 +403,11 @@
       const btn = document.getElementById("btnScanEmail");
       if (manual) {
         btn.disabled = true;
-        btn.textContent = "⏳ A ler e-mail...";
+        btn.textContent = "⏳ A ler PDFs...";
       }
 
       try {
-        const res = await fetch("/api/scan-emails", {
-          headers: { "x-app-password": obterSenha() }
-        });
+        const res = await fetch("/api/scan-emails", { headers: obterCredenciais() });
         const data = await res.json();
         localStorage.setItem("ultimo_scan_email_ts", String(Date.now()));
 
@@ -390,13 +420,13 @@
         const novasFaturas = (data.faturas || []).filter(f => !processadas.includes(f.uid));
 
         if (novasFaturas.length === 0) {
-          if (manual) alert("Nenhuma fatura nova encontrada nos últimos 10 dias.");
+          if (manual) alert("Nenhuma fatura (FT) nova encontrada nos últimos 10 dias.");
           return;
         }
 
         renderizarFilaFaturas(novasFaturas);
       } catch (e) {
-        if (manual) alert("Não foi possível verificar o e-mail neste momento.");
+        if (manual) alert("Erro ao verificar e-mail: " + e.message);
       } finally {
         if (manual) {
           btn.disabled = false;
@@ -405,41 +435,53 @@
       }
     }
 
+    function descarregarPdfAnexo(uid) {
+      const fat = faturasCache[uid];
+      if (!fat || !fat.pdfBase64) return;
+      const link = document.createElement("a");
+      link.href = "data:application/pdf;base64," + fat.pdfBase64;
+      link.download = fat.nomeArquivoPdf || `Fatura_${uid}.pdf`;
+      link.click();
+    }
+
     function renderizarFilaFaturas(faturas) {
       const box = document.getElementById("filaFaturasEmail");
       const lista = document.getElementById("listaFaturasEmail");
       box.style.display = "block";
+      faturas.forEach(f => { faturasCache[f.uid] = f; });
 
-      lista.innerHTML = faturas.map((f, idx) => `
+      lista.innerHTML = faturas.map(f => `
         <div class="invoice-item" id="inv_row_${f.uid}">
           <div class="invoice-meta">
             <strong>${f.descricao} — ${Number(f.valor || 0).toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €</strong>
-            <span>De: ${f.remetente} · Data: ${f.data}</span>
+            <span>De: ${f.remetente} · Data: ${f.data} ${f.nomeArquivoPdf ? `· 📎 ${f.nomeArquivoPdf}` : ""}</span>
           </div>
           <div class="invoice-btns">
-            <button class="btn-inv-paid" onclick='confirmarFaturaEmail(${JSON.stringify(f)}, "Pago", "saida")'>✓ Foi Paga</button>
-            <button class="btn-inv-rec" onclick='confirmarFaturaEmail(${JSON.stringify(f)}, "Recebido", "entrada")'>✓ Foi Recebida</button>
-            <button class="btn-inv-pend" onclick='confirmarFaturaEmail(${JSON.stringify(f)}, "Pendente", "saida")'>⏳ Pendente</button>
+            ${f.pdfBase64 ? `<button class="btn-inv-pdf" onclick="descarregarPdfAnexo('${f.uid}')">📄 Abrir PDF</button>` : ""}
+            <button class="btn-inv-paid" onclick="confirmarFaturaEmail('${f.uid}', 'Pago', 'saida')">✓ Foi Paga</button>
+            <button class="btn-inv-rec" onclick="confirmarFaturaEmail('${f.uid}', 'Recebido', 'entrada')">✓ Foi Recebida</button>
+            <button class="btn-inv-pend" onclick="confirmarFaturaEmail('${f.uid}', 'Pendente', 'saida')">⏳ Pendente</button>
             <button class="btn-inv-ign" onclick="ignorarFaturaEmail('${f.uid}')">Ignorar</button>
           </div>
         </div>
       `).join("");
     }
 
-    async function confirmarFaturaEmail(fatura, estado, tipo) {
+    async function confirmarFaturaEmail(uid, estado, tipo) {
+      const fatura = faturasCache[uid];
+      if (!fatura) return;
+
       try {
         const res = await fetch("/api/notion?tab=movimentos", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-app-password": obterSenha()
-          },
+          headers: { "Content-Type": "application/json", ...obterCredenciais() },
           body: JSON.stringify({
             fromEmailInvoice: {
               descricao: fatura.descricao,
               valor: fatura.valor,
               data: fatura.data,
               remetente: fatura.remetente,
+              nomeArquivoPdf: fatura.nomeArquivoPdf,
               estado,
               tipo
             }
@@ -447,7 +489,7 @@
         });
 
         if (res.ok) {
-          ignorarFaturaEmail(fatura.uid);
+          ignorarFaturaEmail(uid);
           if (abaAtual === "movimentos") carregarDados();
         } else {
           const err = await res.json();
@@ -471,7 +513,17 @@
       }
     }
 
-    // --- NAVEGAÇÃO DE ABAS E SUB-ABAS ---
+    // --- FILTROS DE PERÍODO E NAVEGAÇÃO ---
+    function correspondeAoPeriodo(iso, periodo) {
+      if (periodo === "todos" || !iso) return true;
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return true;
+      const agora = new Date();
+      if (periodo === "anual") return d.getFullYear() === agora.getFullYear();
+      if (periodo === "trimestral") return d.getFullYear() === agora.getFullYear() && Math.floor(d.getMonth() / 3) === Math.floor(agora.getMonth() / 3);
+      return d.getFullYear() === agora.getFullYear() && d.getMonth() === agora.getMonth();
+    }
+
     function mudarAba(novaAba, botao) {
       abaAtual = novaAba;
       gavetaAberta = false;
@@ -489,6 +541,20 @@
       document.getElementById("filtroTexto").value = "";
       document.getElementById("filtroCategoriaSelect").value = "";
       carregarDados();
+    }
+
+    function mudarPeriodoMov(periodo, btn) {
+      periodoMovAtual = periodo;
+      btn.parentElement.querySelectorAll(".sub-tab").forEach((b, i) => { if (i < 4) b.classList.remove("active"); });
+      btn.classList.add("active");
+      aplicarFiltros();
+    }
+
+    function mudarFluxoMov(fluxo, btn) {
+      fluxoMovAtual = fluxo;
+      ["fluxo-todos", "fluxo-entrada", "fluxo-saida"].forEach(id => document.getElementById(id).classList.remove("active"));
+      btn.classList.add("active");
+      aplicarFiltros();
     }
 
     function mudarFiltroFolha(filtro, btn) {
@@ -511,7 +577,7 @@
       document.getElementById("setaGaveta").textContent = gavetaAberta ? "▲ Fechar" : "▼ Abrir";
     }
 
-    // --- DETALHES INTERATIVOS AO CLICAR NA CATEGORIA OU COLABORADOR ---
+    // --- DETALHES AO CLICAR NA CATEGORIA OU COLABORADOR ---
     function abrirDetalhesCategoria(categoria) {
       const itensCat = itensBrutos.filter(i => i.categoria === categoria);
       const total = itensCat.reduce((acc, i) => acc + Math.abs(i.valorNumerico || 0), 0);
@@ -551,7 +617,7 @@
       document.getElementById("modalDetalhes").classList.add("open");
     }
 
-    // --- CRUD DINÂMICO (CRIAR / EDITAR / DUPLICAR / PAGAR / APAGAR) ---
+    // --- CRUD DINÂMICO ---
     async function abrirFormulario(itemExistente = null, isDuplicate = false) {
       const modal = document.getElementById("modalNovo");
       const container = document.getElementById("camposDinamicos");
@@ -570,9 +636,7 @@
       modal.classList.add("open");
 
       try {
-        const res = await fetch(`/api/notion?tab=${abaAtual}&schema=1`, {
-          headers: { "x-app-password": obterSenha() }
-        });
+        const res = await fetch(`/api/notion?tab=${abaAtual}&schema=1`, { headers: obterCredenciais() });
         if (res.status === 401) { fecharFormulario(); terminarSessao(); return; }
         const data = await res.json();
 
@@ -685,7 +749,7 @@
       try {
         const res = await fetch(`/api/notion?tab=${abaAtual}`, {
           method: metodo,
-          headers: { "Content-Type": "application/json", "x-app-password": obterSenha() },
+          headers: { "Content-Type": "application/json", ...obterCredenciais() },
           body: JSON.stringify(payload)
         });
         if (res.status === 401) { fecharFormulario(); terminarSessao(); return; }
@@ -711,7 +775,7 @@
       try {
         const res = await fetch(`/api/notion?tab=${abaAtual}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", "x-app-password": obterSenha() },
+          headers: { "Content-Type": "application/json", ...obterCredenciais() },
           body: JSON.stringify({ pageId, quickPaid: true })
         });
         const data = await res.json();
@@ -727,7 +791,7 @@
       try {
         const res = await fetch(`/api/notion?tab=${abaAtual}&id=${pageId}`, {
           method: "DELETE",
-          headers: { "x-app-password": obterSenha() }
+          headers: obterCredenciais()
         });
         if (res.ok) carregarDados();
       } catch (e) {
@@ -758,7 +822,7 @@
         return true;
       });
 
-      // Comportamento específico da FOLHA SALARIAL (dia 01 a 31 do mês recorrente + sub-abas)
+      // FOLHA SALARIAL (Todos os colaboradores do Notion sem limites + filtro de mês)
       if (abaAtual === "folha") {
         document.getElementById("secaoLiquidados").style.display = "none";
 
@@ -775,24 +839,27 @@
         if (filtroFolhaAtual === "pagos") listaAtiva = pagosFolha;
 
         itensVisiveisExport = listaAtiva;
-        atualizarResumoEGraficos(doMes);
+        atualizarResumoEGraficos(doMes, true);
         document.getElementById("lista").innerHTML = listaAtiva.length
           ? listaAtiva.map(item => renderizarCard(item, true)).join("")
-          : "<p>Nenhum colaborador encontrado neste separador do mês.</p>";
+          : "<p>Nenhum colaborador encontrado neste separador.</p>";
         return;
       }
 
-      // Comportamento específico de MOVIMENTOS (Pendências primeiro + Gaveta de Pagos/Recebidos)
+      // MOVIMENTOS FINANCEIROS (Mensal/Trimestral/Anual + Separação Entrada/Saída + Gaveta Liquidados)
       if (abaAtual === "movimentos") {
-        const pendentes = base.filter(i => !i.isSettled);
-        const liquidados = base.filter(i => i.isSettled);
+        const noPeriodo = base.filter(i => correspondeAoPeriodo(i.dataIso, periodoMovAtual));
+        const filtradosFluxo = noPeriodo.filter(i => fluxoMovAtual === "todos" || i.tipoFluxo === fluxoMovAtual);
 
-        itensVisiveisExport = base;
-        atualizarResumoEGraficos(base);
+        const pendentes = filtradosFluxo.filter(i => !i.isSettled);
+        const liquidados = filtradosFluxo.filter(i => i.isSettled);
+
+        itensVisiveisExport = filtradosFluxo;
+        atualizarResumoEGraficos(noPeriodo, false);
 
         document.getElementById("lista").innerHTML = `
           <div class="section-label">⏳ Pendências a Pagar / Receber (${pendentes.length})</div>
-          ${pendentes.length ? pendentes.map(item => renderizarCard(item, false)).join("") : "<p>Sem pendências em aberto neste momento.</p>"}
+          ${pendentes.length ? pendentes.map(item => renderizarCard(item, false)).join("") : "<p>Sem pendências neste período.</p>"}
         `;
 
         const secLiq = document.getElementById("secaoLiquidados");
@@ -800,14 +867,14 @@
         document.getElementById("textoGavetaLiquidados").textContent = `📁 Ver Pagos e Recebidos (${liquidados.length})`;
         document.getElementById("listaLiquidados").innerHTML = liquidados.length
           ? liquidados.map(item => renderizarCard(item, false)).join("")
-          : "<p>Nenhum movimento pago ou recebido ainda.</p>";
+          : "<p>Nenhum movimento pago ou recebido neste período.</p>";
         return;
       }
 
-      // Comportamento de ORÇAMENTOS
+      // ORÇAMENTOS
       document.getElementById("secaoLiquidados").style.display = "none";
       itensVisiveisExport = base;
-      atualizarResumoEGraficos(base);
+      atualizarResumoEGraficos(base, false);
       document.getElementById("lista").innerHTML = base.length
         ? base.map(item => renderizarCard(item, false)).join("")
         : "<p>Nenhum orçamento encontrado.</p>";
@@ -815,6 +882,9 @@
 
     function renderizarCard(item, isColaborador) {
       const badgeClass = item.isSettled ? "badge paid" : "badge pending";
+      const flowBadge = !isColaborador
+        ? `<span class="badge ${item.tipoFluxo === "entrada" ? "in-flow" : "out-flow"}">${item.tipoFluxo === "entrada" ? "↑ Entrada" : "↓ Saída"}</span>`
+        : "";
 
       let barraOrcamentoHtml = "";
       if (abaAtual === "orcamentos") {
@@ -839,7 +909,8 @@
             <span class="card-title" onclick='${isColaborador ? `abrirDetalhesColaborador(${JSON.stringify(item).replace(/'/g, "&#39;")})` : `abrirDetalhesCategoria("${item.categoria}")`}'>
               ${item.titulo} ${isColaborador ? "👤" : ""}
             </span>
-            <div style="display:flex; gap:6px; align-items:center;">
+            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+              ${flowBadge}
               <span class="cat-pill" onclick='abrirDetalhesCategoria("${item.categoria}")'>${item.categoria}</span>
               <span class="${badgeClass}">${item.status}</span>
             </div>
@@ -861,42 +932,49 @@
       `;
     }
 
-    function atualizarResumoEGraficos(items) {
+    function atualizarResumoEGraficos(items, isFolha) {
       let entRealizadas = 0;
       let saiRealizadas = 0;
-      let pendentesAberto = 0;
+      let aReceberPend = 0;
+      let aPagarPend = 0;
       const porCategoria = {};
-      const porEstado = {};
 
       items.forEach(item => {
         const val = Math.abs(item.valorNumerico || 0);
+        const isSaida = isFolha || item.tipoFluxo === "saida";
+
         if (item.isSettled) {
-          if (item.tipoFluxo === "saida" || item.valorNumerico < 0) saiRealizadas += val;
+          if (isSaida) saiRealizadas += val;
           else entRealizadas += val;
         } else {
-          pendentesAberto += (item.tipoFluxo === "saida" ? -val : val);
+          if (isSaida) aPagarPend += val;
+          else aReceberPend += val;
         }
 
         const cat = item.categoria || "Geral";
         porCategoria[cat] = (porCategoria[cat] || 0) + (val || 1);
-
-        const est = item.isSettled ? "Pagos / Recebidos" : "Pendentes";
-        porEstado[est] = (porEstado[est] || 0) + (val || 1);
       });
 
-      const previsaoAtual = (entRealizadas - saiRealizadas) + pendentesAberto;
+      const saldoPendente = aReceberPend - aPagarPend;
+      const previsaoAtual = (entRealizadas - saiRealizadas) + saldoPendente;
 
-      document.getElementById("lblSum1").textContent = "Entradas Realizadas";
-      document.getElementById("lblSum2").textContent = "Saídas Realizadas";
-      document.getElementById("lblSum3").textContent = "Saldo Pendente";
-      document.getElementById("lblSum4").textContent = "Previsão Atualizada";
+      document.getElementById("lblSum1").textContent = isFolha ? "Total Colaboradores" : "Entradas Realizadas";
+      document.getElementById("lblSum2").textContent = isFolha ? "Salários Pagos" : "Saídas Realizadas";
+      document.getElementById("lblSum3").textContent = isFolha ? "Salários Por Pagar" : "Pendentes (Receber - Pagar)";
+      document.getElementById("lblSum4").textContent = isFolha ? "Custo Total Folha" : "Previsão Atualizada";
 
-      document.getElementById("sumIn").textContent = entRealizadas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
-      document.getElementById("sumOut").textContent = saiRealizadas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
-      document.getElementById("sumPend").textContent = pendentesAberto.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
-      document.getElementById("sumNet").textContent = previsaoAtual.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      if (isFolha) {
+        document.getElementById("sumIn").textContent = items.length + " colab.";
+        document.getElementById("sumOut").textContent = saiRealizadas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+        document.getElementById("sumPend").textContent = aPagarPend.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+        document.getElementById("sumNet").textContent = (saiRealizadas + aPagarPend).toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      } else {
+        document.getElementById("sumIn").textContent = entRealizadas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+        document.getElementById("sumOut").textContent = saiRealizadas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+        document.getElementById("sumPend").textContent = saldoPendente.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+        document.getElementById("sumNet").textContent = previsaoAtual.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
+      }
 
-      // Pílulas clicáveis de categorias
       const catsKeys = Object.keys(porCategoria);
       document.getElementById("pilsCategorias").innerHTML = catsKeys.map(c =>
         `<button class="cat-pill" onclick='abrirDetalhesCategoria("${c}")'>🔍 ${c} (${porCategoria[c].toLocaleString("pt-PT", { minimumFractionDigits: 2 })} €)</button>`
@@ -923,10 +1001,7 @@
           responsive: true,
           maintainAspectRatio: false,
           onClick: (_, elements) => {
-            if (elements.length > 0) {
-              const idx = elements[0].index;
-              abrirDetalhesCategoria(catsKeys[idx]);
-            }
+            if (elements.length > 0) abrirDetalhesCategoria(catsKeys[elements[0].index]);
           },
           plugins: { legend: { position: "right" } }
         }
@@ -935,11 +1010,11 @@
       chartEstInstance = new Chart(ctxEst, {
         type: "bar",
         data: {
-          labels: Object.keys(porEstado),
+          labels: ["Entradas Realizadas", "Saídas Realizadas", "A Receber", "A Pagar"],
           datasets: [{
-            label: "Total (€)",
-            data: Object.values(porEstado),
-            backgroundColor: ["#ff9500", "#34c759"],
+            label: "Valor (€)",
+            data: [entRealizadas, saiRealizadas, aReceberPend, aPagarPend],
+            backgroundColor: ["#188038", "#d93025", "#0071e3", "#f29900"],
             borderRadius: 6
           }]
         },
@@ -947,25 +1022,12 @@
       });
     }
 
-    // --- RELATÓRIOS COMPLETOS DE SAÚDE FINANCEIRA (MENSAL / TRIMESTRAL / ANUAL) ---
+    // --- SAÚDE FINANCEIRA (MENSAL / TRIMESTRAL / ANUAL COM CÁLCULO REALIZADO EXATO) ---
     function renderizarSaudeFinanceira(data) {
       dadosSaudeCache = data;
-      const agora = new Date();
-      const anoAtual = agora.getFullYear();
-      const mesAtual = agora.getMonth(); // 0..11
-      const trimestreAtual = Math.floor(mesAtual / 3); // 0..3
 
-      const filtrarPorPeriodo = (iso) => {
-        if (!iso) return true;
-        const d = new Date(iso);
-        if (isNaN(d.getTime())) return true;
-        if (periodoSaudeAtual === "anual") return d.getFullYear() === anoAtual;
-        if (periodoSaudeAtual === "trimestral") return d.getFullYear() === anoAtual && Math.floor(d.getMonth() / 3) === trimestreAtual;
-        return d.getFullYear() === anoAtual && d.getMonth() === mesAtual;
-      };
-
-      const movPeriodo = (data.movimentos || []).filter(m => filtrarPorPeriodo(m.dataIso));
-      const salPeriodo = (data.salarios || []).filter(s => filtrarPorPeriodo(s.dataIso));
+      const movPeriodo = (data.movimentos || []).filter(m => correspondeAoPeriodo(m.dataIso, periodoSaudeAtual));
+      const salPeriodo = (data.salarios || []).filter(s => correspondeAoPeriodo(s.dataIso, periodoSaudeAtual));
 
       let entradasPagas = 0;
       let entradasReceber = 0;
@@ -993,9 +1055,9 @@
       const previsaoAtualizada = saldoRealizado + entradasReceber - saidasPagar;
 
       document.getElementById("resumoExecutivo").style.display = "grid";
-      document.getElementById("lblSum1").textContent = "Recebido (Realizado)";
-      document.getElementById("lblSum2").textContent = "Pago (Mov. + Salários)";
-      document.getElementById("lblSum3").textContent = "A Receber - A Pagar";
+      document.getElementById("lblSum1").textContent = "Entradas Realizadas";
+      document.getElementById("lblSum2").textContent = "Saídas Realizadas (c/ Salários)";
+      document.getElementById("lblSum3").textContent = "Pendentes (Receber - Pagar)";
       document.getElementById("lblSum4").textContent = "Previsão Final Atualizada";
 
       document.getElementById("sumIn").textContent = entradasPagas.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
@@ -1003,9 +1065,10 @@
       document.getElementById("sumPend").textContent = (entradasReceber - saidasPagar).toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
       document.getElementById("sumNet").textContent = previsaoAtualizada.toLocaleString("pt-PT", { minimumFractionDigits: 2 }) + " €";
 
+      const agora = new Date();
       const nomePeriodo = periodoSaudeAtual === "anual"
-        ? `Ano ${anoAtual}`
-        : (periodoSaudeAtual === "trimestral" ? `${trimestreAtual + 1}º Trimestre de ${anoAtual}` : `${String(mesAtual + 1).padStart(2, "0")}/${anoAtual}`);
+        ? `Ano ${agora.getFullYear()}`
+        : (periodoSaudeAtual === "trimestral" ? `${Math.floor(agora.getMonth() / 3) + 1}º Trimestre de ${agora.getFullYear()}` : `${String(agora.getMonth() + 1).padStart(2, "0")}/${agora.getFullYear()}`);
 
       document.getElementById("lista").innerHTML = `
         <div class="card">
@@ -1036,11 +1099,11 @@
         alert("Não há registos visíveis para exportar.");
         return;
       }
-      const cabecalhos = ["Título", "Categoria", "Estado", ...new Set(itensVisiveisExport.flatMap(i => i.colunas.map(c => c.nome)))];
+      const cabecalhos = ["Título", "Fluxo", "Categoria", "Estado", ...new Set(itensVisiveisExport.flatMap(i => i.colunas.map(c => c.nome)))];
       const linhas = [cabecalhos.join(";")];
 
       itensVisiveisExport.forEach(item => {
-        const mapa = { "Título": item.titulo, "Categoria": item.categoria, "Estado": item.status };
+        const mapa = { "Título": item.titulo, "Fluxo": item.tipoFluxo, "Categoria": item.categoria, "Estado": item.status };
         item.colunas.forEach(c => { mapa[c.nome] = c.valor; });
         linhas.push(cabecalhos.map(h => `"${String(mapa[h] || "").replace(/"/g, '""')}"`).join(";"));
       });
@@ -1058,16 +1121,17 @@
       const lista = document.getElementById("lista");
       if (!silencioso) lista.innerHTML = "Carregando...";
 
+      document.getElementById("subTabsMovimentos").style.display = abaAtual === "movimentos" ? "flex" : "none";
       document.getElementById("subTabsFolha").style.display = abaAtual === "folha" ? "flex" : "none";
       document.getElementById("subTabsSaude").style.display = abaAtual === "saude" ? "flex" : "none";
 
       try {
-        const res = await fetch(`/api/notion?tab=${abaAtual}`, {
-          headers: { "x-app-password": obterSenha() }
+        const res = await fetch(`/api/notion?tab=${abaAtual}&t=${Date.now()}`, {
+          headers: obterCredenciais()
         });
 
         if (res.status === 401) {
-          mostrarLogin("Introduza a senha para aceder ao portal.");
+          mostrarLogin("Sessão expirada. Introduza o utilizador e senha.");
           return;
         }
 
@@ -1078,6 +1142,8 @@
           lista.innerHTML = `<div class="erro">${data.error}</div>`;
           return;
         }
+
+        document.getElementById("statusSync").textContent = `Sincronizado com Notion às ${new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
 
         if (data.mode === "saude_completa") {
           document.getElementById("barraFiltros").style.display = "none";
@@ -1101,7 +1167,7 @@
       }
     }
 
-    if (obterSenha()) {
+    if (temSessao()) {
       mostrarApp();
     } else {
       mostrarLogin();
