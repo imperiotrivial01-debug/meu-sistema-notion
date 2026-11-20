@@ -11,7 +11,7 @@
     body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; background: #f2f2f7; margin: 0; padding: 20px 16px; color: #1c1c1e; }
     .container { max-width: 960px; margin: 0 auto; }
 
-    /* Login com Utilizador e Senha */
+    /* Login com Utilizador e Senha + Primeiro Acesso */
     .login-screen { max-width: 390px; margin: 65px auto; background: white; padding: 28px 24px; border-radius: 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); text-align: center; }
     .login-icon { width: 48px; height: 48px; background: #eef6ff; color: #0071e3; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px; font-weight: 700; }
     .login-screen h2 { margin: 0 0 6px 0; font-size: 20px; }
@@ -19,6 +19,7 @@
     .login-input { width: 100%; padding: 12px 14px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 15px; margin-bottom: 10px; background: #fafafa; }
     .login-input:focus { outline: none; border-color: #0071e3; background: white; }
     .login-btn { width: 100%; background: #0071e3; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 4px; }
+    .link-btn { background: none; border: none; color: #0071e3; font-size: 13px; font-weight: 600; margin-top: 14px; cursor: pointer; display: inline-block; }
 
     /* Cabeçalho */
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap; }
@@ -115,7 +116,7 @@
     .kpi-value { font-size: 24px; font-weight: 700; color: #1c1c1e; letter-spacing: -0.5px; }
 
     .section-label { font-size: 13px; font-weight: 700; color: #6e6e73; text-transform: uppercase; letter-spacing: 0.4px; margin: 14px 0 10px 0; }
-    .erro { color: #d93025; background: #fce8e6; padding: 12px; border-radius: 10px; margin-bottom: 12px; font-size: 13px; }
+    .erro { color: #d93025; background: #fce8e6; padding: 12px; border-radius: 10px; margin-bottom: 12px; font-size: 13px; text-align: left; }
 
     /* Modais */
     .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); align-items: center; justify-content: center; padding: 16px; z-index: 100; }
@@ -149,7 +150,7 @@
       <input type="text" id="inputUser" class="login-input" placeholder="Utilizador" required autofocus>
       <input type="password" id="inputSenha" class="login-input" placeholder="Senha de acesso" required>
       <button type="submit" id="btnEntrar" class="login-btn">Entrar no Portal</button>
-      <button type="button" onclick="alternarModoLogin(true)" style="background:none; border:none; color:#0071e3; font-size:13px; font-weight:600; margin-top:14px; cursor:pointer;">
+      <button type="button" class="link-btn" onclick="alternarModoLogin(true)">
         Primeiro acesso? Definir minha senha
       </button>
     </form>
@@ -160,12 +161,11 @@
       <input type="password" id="setupPass1" class="login-input" placeholder="Crie a sua nova senha (mín. 4 caracteres)" required>
       <input type="password" id="setupPass2" class="login-input" placeholder="Confirme a sua nova senha" required>
       <button type="submit" id="btnCriarSenha" class="login-btn">Guardar Senha e Entrar</button>
-      <button type="button" onclick="alternarModoLogin(false)" style="background:none; border:none; color:#6e6e73; font-size:13px; font-weight:600; margin-top:14px; cursor:pointer;">
+      <button type="button" class="link-btn" style="color:#6e6e73;" onclick="alternarModoLogin(false)">
         ← Voltar ao login
       </button>
     </form>
   </div>
-
 
   <!-- Painel Principal -->
   <div id="appBox" class="container" style="display:none;">
@@ -199,7 +199,7 @@
       <div id="listaFaturasEmail"></div>
     </div>
 
-    <!-- Sub-abas de MOVIMENTOS (Período: Mensal / Trimestral / Anual / Todos + Fluxo: Todos / Entradas / Saídas) -->
+    <!-- Sub-abas de MOVIMENTOS -->
     <div id="subTabsMovimentos" class="sub-tabs" style="display:none;">
       <button class="sub-tab active" onclick="mudarPeriodoMov('mensal', this)">📅 Mensal</button>
       <button class="sub-tab" onclick="mudarPeriodoMov('trimestral', this)">📊 Trimestral</button>
@@ -304,8 +304,8 @@
     let editandoPageId = null;
 
     let gavetaAberta = false;
-    let periodoMovAtual = "mensal";  // "mensal" | "trimestral" | "anual" | "todos"
-    let fluxoMovAtual = "todos";     // "todos" | "entrada" | "saida"
+    let periodoMovAtual = "mensal";
+    let fluxoMovAtual = "todos";
     let filtroFolhaAtual = "pendentes";
     let periodoSaudeAtual = "mensal";
     let dadosSaudeCache = null;
@@ -337,6 +337,16 @@
         const el = document.getElementById(id);
         if (el) el.style.display = role === "staff" ? "none" : "inline-block";
       });
+    }
+
+    function alternarModoLogin(isPrimeiroAcesso) {
+      document.getElementById("erroLogin").style.display = "none";
+      document.getElementById("formLoginNormal").style.display = isPrimeiroAcesso ? "none" : "block";
+      document.getElementById("formPrimeiroAcesso").style.display = isPrimeiroAcesso ? "block" : "none";
+      document.getElementById("loginTitle").textContent = isPrimeiroAcesso ? "Criar Minha Senha" : "Acesso Restrito";
+      document.getElementById("loginDesc").textContent = isPrimeiroAcesso
+        ? "Introduza o utilizador autorizado pelo administrador e escolha a sua senha"
+        : "Introduza o seu utilizador e senha para aceder ao portal financeiro";
     }
 
     function mostrarLogin(mensagemErro = "") {
@@ -398,6 +408,48 @@
       } finally {
         btn.disabled = false;
         btn.textContent = "Entrar no Portal";
+      }
+    }
+
+    async function criarSenhaPrimeiroAcesso(e) {
+      e.preventDefault();
+      const user = document.getElementById("setupUser").value.trim();
+      const p1 = document.getElementById("setupPass1").value;
+      const p2 = document.getElementById("setupPass2").value;
+      const btn = document.getElementById("btnCriarSenha");
+      const erroEl = document.getElementById("erroLogin");
+
+      if (p1 !== p2) {
+        erroEl.textContent = "As duas senhas não coincidem.";
+        erroEl.style.display = "block";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "A registar senha...";
+      erroEl.style.display = "none";
+
+      try {
+        const res = await fetch("/api/notion?setup=1", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: user, newPassword: p1 })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem("portal_financeiro_user", user);
+          localStorage.setItem("portal_financeiro_pass", p1);
+          mostrarApp(data.role || "staff");
+        } else {
+          erroEl.textContent = data.error || "Não foi possível criar a senha.";
+          erroEl.style.display = "block";
+        }
+      } catch (err) {
+        erroEl.textContent = "Erro de rede ao definir senha.";
+        erroEl.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Guardar Senha e Entrar";
       }
     }
 
@@ -839,7 +891,7 @@
         return true;
       });
 
-      // FOLHA SALARIAL (Todos os colaboradores do Notion sem limites + filtro de mês)
+      // FOLHA SALARIAL
       if (abaAtual === "folha") {
         document.getElementById("secaoLiquidados").style.display = "none";
 
@@ -863,7 +915,7 @@
         return;
       }
 
-      // MOVIMENTOS FINANCEIROS (Mensal/Trimestral/Anual + Separação Entrada/Saída + Gaveta Liquidados)
+      // MOVIMENTOS FINANCEIROS
       if (abaAtual === "movimentos") {
         const noPeriodo = base.filter(i => correspondeAoPeriodo(i.dataIso, periodoMovAtual));
         const filtradosFluxo = noPeriodo.filter(i => fluxoMovAtual === "todos" || i.tipoFluxo === fluxoMovAtual);
@@ -1039,7 +1091,7 @@
       });
     }
 
-    // --- SAÚDE FINANCEIRA (MENSAL / TRIMESTRAL / ANUAL COM CÁLCULO REALIZADO EXATO) ---
+    // --- SAÚDE FINANCEIRA ---
     function renderizarSaudeFinanceira(data) {
       dadosSaudeCache = data;
 
