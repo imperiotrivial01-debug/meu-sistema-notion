@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   const APP_PASSWORD = process.env.APP_PASSWORD;
   const STAFF_PASSWORD = process.env.STAFF_PASSWORD;
 
-  // 1. VERIFICAÇÃO DE AUTENTICAÇÃO E PERFIL (admin vs staff)
+  // 1. AUTENTICAÇÃO E PERFIL
   let role = "admin";
   if (APP_PASSWORD || STAFF_PASSWORD) {
     const senhaRecebida = req.headers["x-app-password"] || req.body?.password;
@@ -22,7 +22,6 @@ export default async function handler(req, res) {
 
   const tab = req.query.tab || "movimentos";
 
-  // Bloqueia abas restritas se o utilizador tiver perfil operacional (staff)
   if (role === "staff" && tab !== "movimentos") {
     return res.status(403).json({ error: "Acesso restrito a administradores." });
   }
@@ -49,7 +48,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: `ID da aba '${tab}' não configurado na Vercel.` });
   }
 
-  // 2. LER ESTRUTURA DAS COLUNAS (?schema=1)
+  // 2. ESTRUTURA DAS COLUNAS (?schema=1)
   if (req.method === "GET" && req.query.schema === "1") {
     try {
       const schemaRes = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}`, {
@@ -80,11 +79,46 @@ export default async function handler(req, res) {
     }
   }
 
-  // 3. CRIAR NOVO REGISTO (POST)
+  // 3. CRIAR NOVO REGISTO (POST) — SUPORTA TAMBÉM APROVAÇÃO DE FATURAS DE E-MAIL
   if (req.method === "POST") {
     try {
-      const { valores } = req.body;
-      const properties = await construirPropriedadesNotion(TARGET_ID, valores, headers);
+      const { valores, fromEmailInvoice } = req.body;
+      let propsParaGravar = valores || {};
+
+      // Se vier da fila de revisão de faturas do e-mail, mapeia automaticamente para as colunas da tabela Movimentos
+      if (fromEmailInvoice) {
+        const schemaRes = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}`, { method: "GET", headers });
+        const schemaData = await schemaRes.json();
+        const mapped = {};
+
+        for (const [colName, colDef] of Object.entries(schemaData.properties)) {
+          if (colDef.type === "title") {
+            mapped[colName] = fromEmailInvoice.descricao;
+          } else if (colDef.type === "number" && !mapped._numSet) {
+            mapped[colName] = parseFloat(fromEmailInvoice.valor) || 0;
+            mapped._numSet = true;
+          } else if (colDef.type === "date" && !mapped._dateSet) {
+            mapped[colName] = fromEmailInvoice.data || new Date().toISOString().split("T")[0];
+            mapped._dateSet = true;
+          } else if ((colDef.type === "status" || colDef.type === "select") && /estado|status|situa/i.test(colName)) {
+            const opts = (colDef.status?.options || colDef.select?.options || []).map(o => o.name);
+            const match = opts.find(o => o.toLowerCase().includes(fromEmailInvoice.estado.toLowerCase()));
+            mapped[colName] = match || fromEmailInvoice.estado;
+          } else if ((colDef.type === "select" || colDef.type === "status") && /tipo|fluxo|natureza/i.test(colName)) {
+            const opts = (colDef.status?.options || colDef.select?.options || []).map(o => o.name);
+            const alvoTipo = fromEmailInvoice.tipo === "entrada" ? /entrada|receita|crédito/i : /saída|saida|despesa|débito/i;
+            const matchTipo = opts.find(o => alvoTipo.test(o));
+            if (matchTipo) mapped[colName] = matchTipo;
+          } else if (colDef.type === "rich_text" && /obs|nota|origem|detalhe/i.test(colName)) {
+            mapped[colName] = `Importado do e-mail (${fromEmailInvoice.remetente || "Fatura"})`;
+          }
+        }
+        delete mapped._numSet;
+        delete mapped._dateSet;
+        propsParaGravar = mapped;
+      }
+
+      const properties = await construirPropriedadesNotion(TARGET_ID, propsParaGravar, headers);
 
       const createRes = await fetch("https://api.notion.com/v1/pages", {
         method: "POST",
@@ -106,7 +140,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // 4. EDITAR REGISTO OU MARCAR COMO PAGO (PATCH)
+  // 4. EDITAR REGISTO OU MARCAR COMO PAGO/RECEBIDO (PATCH)
   if (req.method === "PATCH") {
     try {
       const { pageId, valores, quickPaid } = req.body;
@@ -130,7 +164,7 @@ export default async function handler(req, res) {
           }
         }
         if (Object.keys(properties).length === 0) {
-          return res.status(400).json({ error: "Não foi encontrada uma coluna de Estado com opção 'Pago/Concluído'. Use o botão Editar." });
+          return res.status(400).json({ error: "Não foi encontrada uma coluna de Estado com opção 'Pago/Recebido'. Use o botão Editar." });
         }
       } else {
         properties = await construirPropriedadesNotion(TARGET_ID, valores, headers);
@@ -176,9 +210,25 @@ export default async function handler(req, res) {
     }
   }
 
-  // 6. EXTRAIR INDICADORES PARA SAÚDE FINANCEIRA
+  // 6. SAÚDE FINANCEIRA COMPLETA (CRUZA MOVIMENTOS + FOLHA + INDICADORES NOTION)
   if (tab === "saude") {
     try {
+      const [movRes, folhaRes] = await Promise.all([
+        databases.movimentos
+          ? fetch(`https://api.notion.com/v1/databases/${databases.movimentos}/query`, { method: "POST", headers, body: JSON.stringify({}) })
+          : Promise.resolve(null),
+        databases.folha
+          ? fetch(`https://api.notion.com/v1/databases/${databases.folha}/query`, { method: "POST", headers, body: JSON.stringify({}) })
+          : Promise.resolve(null)
+      ]);
+
+      const movData = movRes && movRes.ok ? await movRes.json() : { results: [] };
+      const folhaData = folhaRes && folhaRes.ok ? await folhaRes.json() : { results: [] };
+
+      const movimentos = formatarListaPaginas(movData.results || []);
+      const salarios = formatarListaPaginas(folhaData.results || []);
+
+      // Extrair também KPIs configurados na página/tabela Saúde Financeira
       const kpis = [];
       const dbTest = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}/query`, {
         method: "POST",
@@ -222,13 +272,19 @@ export default async function handler(req, res) {
         }
       }
 
-      return res.status(200).json({ mode: "kpis", kpis, role });
+      return res.status(200).json({
+        mode: "saude_completa",
+        movimentos,
+        salarios,
+        kpis,
+        role
+      });
     } catch (e) {
-      return res.status(500).json({ error: "Erro ao ler métricas de Saúde Financeira." });
+      return res.status(500).json({ error: "Erro ao gerar relatórios de Saúde Financeira." });
     }
   }
 
-  // 7. LISTAR REGISTOS COMPLETOS (COM VALORES BRUTOS PARA EDIÇÃO E GRÁFICOS)
+  // 7. LISTAR REGISTOS NORMAIS (MOVIMENTOS, FOLHA, ORÇAMENTOS)
   try {
     const response = await fetch(`https://api.notion.com/v1/databases/${TARGET_ID}/query`, {
       method: "POST",
@@ -241,92 +297,106 @@ export default async function handler(req, res) {
       return res.status(response.status).json({ error: data.message || "Erro na API do Notion" });
     }
 
-    const itensFormatados = data.results.map(page => {
-      let titulo = "Sem título";
-      let status = "";
-      let categoria = "";
-      let dataIso = "";
-      let valorNumerico = 0;
-      let tipoFluxo = ""; // "entrada" ou "saida"
-      const colunas = [];
-      const raw = {};
-
-      for (const [nomeColuna, prop] of Object.entries(page.properties)) {
-        if (prop.type === "title") {
-          titulo = prop.title.map(t => t.plain_text).join("") || "Sem título";
-          raw[nomeColuna] = titulo;
-        } else if (prop.type === "status" && prop.status) {
-          status = prop.status.name;
-          raw[nomeColuna] = status;
-        } else if (prop.type === "select" && prop.select) {
-          const valSel = prop.select.name;
-          raw[nomeColuna] = valSel;
-          if (/tipo|fluxo|natureza|movimento/i.test(nomeColuna)) {
-            if (/entrada|receita|crédito|credito|ganho/i.test(valSel)) tipoFluxo = "entrada";
-            if (/saída|saida|despesa|débito|debito|custo|gasto/i.test(valSel)) tipoFluxo = "saida";
-          }
-          if (/cat|grupo|centro/i.test(nomeColuna)) {
-            categoria = valSel;
-          } else if (!status) {
-            status = valSel;
-          }
-          colunas.push({ nome: nomeColuna, valor: valSel, rawNum: null });
-        } else if (prop.type === "number" && prop.number !== null) {
-          raw[nomeColuna] = prop.number;
-          if (valorNumerico === 0 || /valor|montante|total|salário|salario|líquido|liquido|realizado/i.test(nomeColuna)) {
-            valorNumerico = prop.number;
-          }
-          colunas.push({
-            nome: nomeColuna,
-            valor: prop.number.toLocaleString("pt-PT", { minimumFractionDigits: 2 }),
-            rawNum: prop.number
-          });
-        } else if (prop.type === "date" && prop.date) {
-          dataIso = prop.date.start;
-          raw[nomeColuna] = prop.date.start;
-          colunas.push({ nome: nomeColuna, valor: prop.date.start, rawNum: null });
-        } else if (prop.type === "rich_text" && prop.rich_text.length > 0) {
-          const txt = prop.rich_text.map(t => t.plain_text).join("");
-          raw[nomeColuna] = txt;
-          colunas.push({ nome: nomeColuna, valor: txt, rawNum: null });
-        } else if (prop.type === "checkbox") {
-          raw[nomeColuna] = prop.checkbox;
-          colunas.push({ nome: nomeColuna, valor: prop.checkbox ? "Sim" : "Não", rawNum: null });
-        } else if (prop.type === "formula" && prop.formula) {
-          const f = prop.formula;
-          const val = f.number !== undefined && f.number !== null
-            ? f.number.toLocaleString("pt-PT", { minimumFractionDigits: 2 })
-            : (f.string || (f.boolean !== undefined ? (f.boolean ? "Sim" : "Não") : ""));
-          if (val !== "") colunas.push({ nome: nomeColuna, valor: val, rawNum: f.number ?? null });
-        } else if (prop.type === "multi_select" && prop.multi_select.length > 0) {
-          const ms = prop.multi_select.map(s => s.name);
-          raw[nomeColuna] = ms.join(", ");
-          if (!categoria) categoria = ms[0];
-          colunas.push({ nome: nomeColuna, valor: ms.join(", "), rawNum: null });
-        }
-      }
-
-      if (!tipoFluxo) {
-        tipoFluxo = valorNumerico < 0 ? "saida" : "entrada";
-      }
-
-      return {
-        id: page.id,
-        titulo,
-        status,
-        categoria: categoria || status || "Geral",
-        dataIso,
-        valorNumerico,
-        tipoFluxo,
-        colunas,
-        raw
-      };
-    });
-
+    const itensFormatados = formatarListaPaginas(data.results || []);
     res.status(200).json({ mode: "list", items: itensFormatados, role });
   } catch (error) {
     res.status(500).json({ error: "Falha ao conectar com o Notion." });
   }
+}
+
+function formatarListaPaginas(results) {
+  return results.map(page => {
+    let titulo = "Sem título";
+    let status = "";
+    let categoria = "";
+    let dataIso = page.created_time ? page.created_time.slice(0, 10) : "";
+    let dataExplicit = false;
+    let valorNumerico = 0;
+    let tipoFluxo = "";
+    let isPaidFlag = false;
+    const colunas = [];
+    const raw = {};
+
+    for (const [nomeColuna, prop] of Object.entries(page.properties)) {
+      if (prop.type === "title") {
+        titulo = prop.title.map(t => t.plain_text).join("") || "Sem título";
+        raw[nomeColuna] = titulo;
+      } else if (prop.type === "status" && prop.status) {
+        status = prop.status.name;
+        raw[nomeColuna] = status;
+      } else if (prop.type === "select" && prop.select) {
+        const valSel = prop.select.name;
+        raw[nomeColuna] = valSel;
+        if (/tipo|fluxo|natureza|movimento/i.test(nomeColuna)) {
+          if (/entrada|receita|crédito|credito|ganho/i.test(valSel)) tipoFluxo = "entrada";
+          if (/saída|saida|despesa|débito|debito|custo|gasto/i.test(valSel)) tipoFluxo = "saida";
+        }
+        if (/cat|grupo|centro|cargo|funç|func|depart/i.test(nomeColuna)) {
+          categoria = valSel;
+        } else if (!status) {
+          status = valSel;
+        }
+        colunas.push({ nome: nomeColuna, valor: valSel, rawNum: null });
+      } else if (prop.type === "number" && prop.number !== null) {
+        raw[nomeColuna] = prop.number;
+        if (valorNumerico === 0 || /valor|montante|total|salário|salario|líquido|liquido|realizado/i.test(nomeColuna)) {
+          valorNumerico = prop.number;
+        }
+        colunas.push({
+          nome: nomeColuna,
+          valor: prop.number.toLocaleString("pt-PT", { minimumFractionDigits: 2 }),
+          rawNum: prop.number
+        });
+      } else if (prop.type === "date" && prop.date) {
+        if (!dataExplicit) {
+          dataIso = prop.date.start;
+          dataExplicit = true;
+        }
+        raw[nomeColuna] = prop.date.start;
+        colunas.push({ nome: nomeColuna, valor: prop.date.start, rawNum: null });
+      } else if (prop.type === "rich_text" && prop.rich_text.length > 0) {
+        const txt = prop.rich_text.map(t => t.plain_text).join("");
+        raw[nomeColuna] = txt;
+        colunas.push({ nome: nomeColuna, valor: txt, rawNum: null });
+      } else if (prop.type === "checkbox") {
+        raw[nomeColuna] = prop.checkbox;
+        if (/pag|conclu|recebid|liquid/i.test(nomeColuna) && prop.checkbox) {
+          isPaidFlag = true;
+        }
+        colunas.push({ nome: nomeColuna, valor: prop.checkbox ? "Sim" : "Não", rawNum: null });
+      } else if (prop.type === "formula" && prop.formula) {
+        const f = prop.formula;
+        const val = f.number !== undefined && f.number !== null
+          ? f.number.toLocaleString("pt-PT", { minimumFractionDigits: 2 })
+          : (f.string || (f.boolean !== undefined ? (f.boolean ? "Sim" : "Não") : ""));
+        if (val !== "") colunas.push({ nome: nomeColuna, valor: val, rawNum: f.number ?? null });
+      } else if (prop.type === "multi_select" && prop.multi_select.length > 0) {
+        const ms = prop.multi_select.map(s => s.name);
+        raw[nomeColuna] = ms.join(", ");
+        if (!categoria) categoria = ms[0];
+        colunas.push({ nome: nomeColuna, valor: ms.join(", "), rawNum: null });
+      }
+    }
+
+    if (!tipoFluxo) {
+      tipoFluxo = valorNumerico < 0 ? "saida" : "entrada";
+    }
+
+    const isSettled = isPaidFlag || /pag|conclu|recebid|liquid|done/i.test(status || "");
+
+    return {
+      id: page.id,
+      titulo,
+      status: status || (isSettled ? "Pago" : "Pendente"),
+      isSettled,
+      categoria: categoria || "Geral",
+      dataIso,
+      valorNumerico,
+      tipoFluxo,
+      colunas,
+      raw
+    };
+  });
 }
 
 async function construirPropriedadesNotion(TARGET_ID, valores, headers) {
